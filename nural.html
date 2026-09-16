@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise: Neural Computation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;}
+        .back-btn { align-self: flex-start; text-decoration: none; color: #d29922; font-family: 'Fira Code', monospace; border: 1px solid #d29922; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(210, 153, 34, 0.1); box-shadow: 0 0 10px rgba(210, 153, 34, 0.3); }
+        .game-container { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 30px; text-align: center; max-width: 500px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { font-family: 'Fira Code', monospace; color: #d29922; margin-top: 0; }
+        .stats { display: flex; justify-content: space-between; font-family: 'Fira Code', monospace; color: #8b949e; margin-bottom: 20px; padding: 10px; background: #0d1117; border-radius: 4px; border: 1px solid #30363d;}
+        .stats span { color: #c9d1d9; font-weight: bold; }
+        .equation-box { background: #050505; border: 1px solid #30363d; padding: 40px 20px; margin-bottom: 20px; border-radius: 6px;}
+        .equation { font-size: 48px; font-family: 'Fira Code', monospace; color: #e6edf3; letter-spacing: 2px;}
+        .input-area { margin-bottom: 20px; }
+        .answer-display { font-family: 'Fira Code', monospace; font-size: 32px; background: #0d1117; border: 2px solid #30363d; padding: 10px; border-radius: 4px; height: 40px; display: flex; align-items: center; justify-content: center; color: #3fb950;}
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .num-btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; font-size: 24px; padding: 15px; border-radius: 4px; cursor: pointer; font-family: 'Fira Code', monospace; transition: 0.1s;}
+        .num-btn:active { transform: scale(0.95); background: #30363d; }
+        .num-btn:hover { background: #30363d; }
+        .action-btn { background: #d29922; color: #000; border-color: #d29922;}
+        .action-btn:hover { background: #e3b341; }
+        .delete-btn { background: #f85149; color: white; border-color: #f85149;}
+        .start-btn { font-family: 'Fira Code', monospace; background: #238636; color: #fff; border: none; padding: 16px; font-size: 18px; border-radius: 4px; cursor: pointer; transition: 0.2s; width: 100%;}
+        .start-btn:hover { background: #2ea043; box-shadow: 0 0 15px rgba(63, 185, 80, 0.4); }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    <div class="game-container">
+        <h1>Neural_Computation</h1>
+        <p style="color: #8b949e; margin-bottom: 20px;">Solve as many equations as possible before system overload (60s).</p>
+        <div class="stats"><div>Time: <span id="timeDisplay">60</span>s</div><div>Score: <span id="scoreDisplay">0</span></div></div>
+        <div id="gameArea" style="display: none;">
+            <div class="equation-box"><div class="equation" id="equationDisplay">0 + 0</div></div>
+            <div class="input-area"><div class="answer-display" id="currentInput">_</div></div>
+            <div class="numpad">
+                <button class="num-btn" onclick="appendNum('1')">1</button>
+                <button class="num-btn" onclick="appendNum('2')">2</button>
+                <button class="num-btn" onclick="appendNum('3')">3</button>
+                <button class="num-btn" onclick="appendNum('4')">4</button>
+                <button class="num-btn" onclick="appendNum('5')">5</button>
+                <button class="num-btn" onclick="appendNum('6')">6</button>
+                <button class="num-btn" onclick="appendNum('7')">7</button>
+                <button class="num-btn" onclick="appendNum('8')">8</button>
+                <button class="num-btn" onclick="appendNum('9')">9</button>
+                <button class="num-btn delete-btn" onclick="deleteNum()">DEL</button>
+                <button class="num-btn" onclick="appendNum('0')">0</button>
+                <button class="num-btn action-btn" onclick="submitAnswer()">ENTER</button>
+            </div>
+        </div>
+        <button id="startBtn" class="start-btn" onclick="startGame()">INITIATE PROTOCOL</button>
+    </div>
+
+    <script>
+        let score = 0, timeLeft = 60, timer, correctAnswer = 0, currentString = "";
+        const equationDisplay = document.getElementById('equationDisplay'), inputDisplay = document.getElementById('currentInput'), scoreDisplay = document.getElementById('scoreDisplay'), timeDisplay = document.getElementById('timeDisplay'), gameArea = document.getElementById('gameArea'), startBtn = document.getElementById('startBtn');
+
+        function startGame() {
+            score = 0; timeLeft = 60; currentString = ""; scoreDisplay.innerText = score; timeDisplay.innerText = timeLeft;
+            startBtn.style.display = 'none'; gameArea.style.display = 'block'; updateInputDisplay(); generateEquation();
+            timer = setInterval(() => { timeLeft--; timeDisplay.innerText = timeLeft; if (timeLeft <= 0) endGame(); }, 1000);
+        }
+
+        function generateEquation() {
+            const types = ['+', '-', '*']; const op = types[Math.floor(Math.random() * types.length)]; let num1, num2;
+            if (op === '+') { num1 = Math.floor(Math.random() * 50) + 1; num2 = Math.floor(Math.random() * 50) + 1; correctAnswer = num1 + num2; }
+            else if (op === '-') { num1 = Math.floor(Math.random() * 50) + 20; num2 = Math.floor(Math.random() * num1); correctAnswer = num1 - num2; }
+            else if (op === '*') { num1 = Math.floor(Math.random() * 12) + 2; num2 = Math.floor(Math.random() * 12) + 2; correctAnswer = num1 * num2; }
+            equationDisplay.innerText = `${num1} ${op} ${num2}`;
+        }
+
+        function appendNum(num) { if (currentString.length < 5) { currentString += num; updateInputDisplay(); } }
+        function deleteNum() { currentString = currentString.slice(0, -1); updateInputDisplay(); }
+        function updateInputDisplay() { inputDisplay.innerText = currentString === "" ? "_" : currentString; }
+
+        function submitAnswer() {
+            if (currentString === "") return;
+            if (parseInt(currentString) === correctAnswer) {
+                score += 10;
+                if(window.sfx) sfx.success(); // AUDIO TRIGGER
+                document.querySelector('.equation-box').style.borderColor = '#3fb950';
+            } else {
+                score = Math.max(0, score - 5);
+                if(window.sfx) sfx.error(); // AUDIO TRIGGER
+                document.querySelector('.equation-box').style.borderColor = '#f85149';
+            }
+            scoreDisplay.innerText = score;
+            setTimeout(() => document.querySelector('.equation-box').style.borderColor = '#30363d', 200);
+            currentString = ""; updateInputDisplay(); generateEquation();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (gameArea.style.display === 'none') return;
+            if (e.key >= '0' && e.key <= '9') appendNum(e.key);
+            if (e.key === 'Backspace') deleteNum();
+            if (e.key === 'Enter') submitAnswer();
+        });
+
+        function endGame() {
+            clearInterval(timer); gameArea.style.display = 'none'; startBtn.style.display = 'inline-block'; startBtn.innerText = "RESTART PROTOCOL";
+            document.querySelector('.stats').innerHTML = `<div style="width:100%; text-align:center; color:#d29922; font-size:20px;">SESSION COMPLETE. FINAL SCORE: ${score}</div>`;
+        }
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
