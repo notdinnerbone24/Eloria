@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module: L-System Fractals</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .back-btn { align-self: flex-start; text-decoration: none; color: #3fb950; font-family: 'Fira Code', monospace; border: 1px solid #3fb950; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(63, 185, 80, 0.1); box-shadow: 0 0 10px rgba(63, 185, 80, 0.3); }
+        .module-container { display: flex; gap: 20px; max-width: 1200px; width: 100%; flex-wrap: wrap; justify-content: center; }
+        canvas { background: #050505; border: 1px solid #30363d; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; flex: 1; min-width: 300px; max-width: 400px; }
+        h1 { font-family: 'Fira Code', monospace; color: #3fb950; margin-top: 0; }
+        .guide { font-size: 14px; color: #8b949e; margin-bottom: 20px; line-height: 1.5; background: #0d1117; padding: 15px; border-left: 3px solid #3fb950; }
+        .controls { display: flex; flex-direction: column; gap: 15px; }
+        select, button { font-family: 'Fira Code', monospace; background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 10px; border-radius: 4px; cursor: pointer; }
+        select { accent-color: #3fb950; outline: none; }
+        button { background: #238636; color: white; border: none; font-weight: bold; transition: 0.2s;}
+        button:hover { background: #2ea043; box-shadow: 0 0 10px rgba(63, 185, 80, 0.4); }
+        label { font-family: 'Fira Code', monospace; font-size: 12px; color: #8b949e; display: flex; flex-direction: column; gap: 5px; }
+        input[type="range"] { width: 100%; accent-color: #3fb950; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    
+    <div class="module-container">
+        <canvas id="fractalCanvas" width="700" height="600"></canvas>
+        
+        <div class="panel">
+            <h1>L-System_Fractals</h1>
+            <div class="guide">
+                <strong>System Guide:</strong> L-Systems generate complex fractals through simple recursive rules.<br><br>
+                F = Draw forward<br>
+                + = Turn Right<br>
+                - = Turn Left<br>
+                [ ] = Save / Restore state
+            </div>
+            
+            <div class="controls">
+                <label>Fractal Type
+                    <select id="presetSelect">
+                        <option value="tree">Cyber Tree</option>
+                        <option value="fern">Barnsley Fern</option>
+                        <option value="dragon">Dragon Curve</option>
+                    </select>
+                </label>
+                
+                <label>Iterations (Complexity): <span id="iterVal">4</span>
+                    <input type="range" id="iterSlider" min="1" max="6" value="4">
+                </label>
+                
+                <button id="generateBtn">GENERATE FRACTAL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fractalCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const presets = {
+            tree: { axiom: "X", rules: { "X": "F+[[X]-X]-F[-FX]+X", "F": "FF" }, angle: 25, len: 4, startY: canvas.height - 20, startX: canvas.width / 2, startAngle: -90 },
+            fern: { axiom: "X", rules: { "X": "F-[[X]+X]+F[+FX]-X", "F": "FF" }, angle: 22.5, len: 4, startY: canvas.height - 20, startX: canvas.width / 2, startAngle: -90 },
+            dragon: { axiom: "FX", rules: { "X": "X+YF+", "Y": "-FX-Y" }, angle: 90, len: 8, startY: canvas.height / 2, startX: canvas.width / 2, startAngle: 0 }
+        };
+
+        function generateLSystem(axiom, rules, iterations) {
+            let current = axiom;
+            for (let i = 0; i < iterations; i++) {
+                let next = "";
+                for (let char of current) next += rules[char] || char;
+                current = next;
+            }
+            return current;
+        }
+
+        function drawFractal() {
+            ctx.fillStyle = "#050505";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const type = document.getElementById('presetSelect').value;
+            const config = presets[type];
+            let iterations = parseInt(document.getElementById('iterSlider').value);
+            
+            if (type === 'dragon' && iterations > 12) iterations = 12; 
+            if ((type === 'tree' || type === 'fern') && iterations > 7) iterations = 7;
+
+            const sentence = generateLSystem(config.axiom, config.rules, iterations);
+            
+            ctx.strokeStyle = "rgba(63, 185, 80, 0.7)"; 
+            ctx.shadowBlur = 5; ctx.shadowColor = "#3fb950"; ctx.lineWidth = 1;
+            
+            let len = config.len;
+            if(type === 'tree' || type === 'fern') len = canvas.height / Math.pow(2, iterations + 1);
+            if(type === 'dragon') len = canvas.height / Math.pow(1.4, iterations + 1);
+
+            ctx.save();
+            ctx.translate(config.startX, config.startY);
+            ctx.rotate(config.startAngle * Math.PI / 180);
+
+            for (let i = 0; i < sentence.length; i++) {
+                let char = sentence[i];
+                if (char === "F" || char === "G") {
+                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len, 0); ctx.stroke(); ctx.translate(len, 0);
+                } else if (char === "+") { ctx.rotate(config.angle * Math.PI / 180);
+                } else if (char === "-") { ctx.rotate(-config.angle * Math.PI / 180);
+                } else if (char === "[") { ctx.save();
+                } else if (char === "]") { ctx.restore(); }
+            }
+            ctx.restore();
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', drawFractal);
+        document.getElementById('iterSlider').addEventListener('input', (e) => {
+            document.getElementById('iterVal').innerText = e.target.value;
+            drawFractal();
+        });
+        document.getElementById('presetSelect').addEventListener('change', drawFractal);
+        drawFractal();
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
