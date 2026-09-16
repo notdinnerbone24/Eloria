@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module: Boids</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .back-btn { align-self: flex-start; text-decoration: none; color: #58a6ff; font-family: 'Fira Code', monospace; border: 1px solid #58a6ff; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(88, 166, 255, 0.1); box-shadow: 0 0 10px rgba(88, 166, 255, 0.3); }
+        .module-container { display: flex; gap: 20px; max-width: 1200px; width: 100%; flex-wrap: wrap; justify-content: center; }
+        canvas { background: #050505; border: 1px solid #30363d; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; flex: 1; min-width: 300px; max-width: 400px; }
+        h1 { font-family: 'Fira Code', monospace; color: #3fb950; margin-top: 0; }
+        .guide { font-size: 14px; color: #8b949e; margin-bottom: 20px; line-height: 1.5; background: #0d1117; padding: 15px; border-left: 3px solid #3fb950; }
+        .guide strong { color: #c9d1d9; }
+        .controls { display: flex; flex-direction: column; gap: 15px; }
+        label { font-family: 'Fira Code', monospace; font-size: 12px; color: #8b949e; display: flex; flex-direction: column; gap: 5px; }
+        input[type="range"] { width: 100%; accent-color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    
+    <div class="module-container">
+        <canvas id="boidsCanvas" width="700" height="500"></canvas>
+        
+        <div class="panel">
+            <h1>Boids_Algorithm</h1>
+            <div class="guide">
+                <strong>System Guide:</strong> Simulates emergent swarm behavior found in nature.<br><br>
+                <strong>Parameters:</strong><br>
+                1. <strong>Separation:</strong> Steer to avoid crowding.<br>
+                2. <strong>Alignment:</strong> Steer towards average heading.<br>
+                3. <strong>Cohesion:</strong> Steer to move toward average position.
+            </div>
+            
+            <div class="controls">
+                <label>Separation Force<input type="range" id="sepSlider" min="0" max="3" step="0.1" value="1.5"></label>
+                <label>Alignment Force<input type="range" id="aliSlider" min="0" max="3" step="0.1" value="1.0"></label>
+                <label>Cohesion Force<input type="range" id="cohSlider" min="0" max="3" step="0.1" value="1.0"></label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('boidsCanvas');
+        const ctx = canvas.getContext('2d');
+        const boids = [];
+        const numBoids = 150;
+
+        class Boid {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+            }
+            update() {
+                let sepSlider = parseFloat(document.getElementById('sepSlider').value);
+                let aliSlider = parseFloat(document.getElementById('aliSlider').value);
+                let cohSlider = parseFloat(document.getElementById('cohSlider').value);
+                
+                let sep = {x: 0, y: 0}, ali = {x: 0, y: 0}, coh = {x: 0, y: 0}, total = 0;
+
+                for (let other of boids) {
+                    let d = Math.hypot(this.x - other.x, this.y - other.y);
+                    if (other !== this && d < 50) {
+                        sep.x += (this.x - other.x) / d; sep.y += (this.y - other.y) / d;
+                        ali.x += other.vx; ali.y += other.vy;
+                        coh.x += other.x; coh.y += other.y;
+                        total++;
+                    }
+                }
+
+                if (total > 0) {
+                    ali.x = (ali.x / total) * 0.05 * aliSlider; ali.y = (ali.y / total) * 0.05 * aliSlider;
+                    coh.x = ((coh.x / total) - this.x) * 0.01 * cohSlider; coh.y = ((coh.y / total) - this.y) * 0.01 * cohSlider;
+                    sep.x = sep.x * 0.1 * sepSlider; sep.y = sep.y * 0.1 * sepSlider;
+                    this.vx += ali.x + coh.x + sep.x; this.vy += ali.y + coh.y + sep.y;
+                }
+
+                let speed = Math.hypot(this.vx, this.vy);
+                if (speed > 4) { this.vx = (this.vx / speed) * 4; this.vy = (this.vy / speed) * 4; }
+                this.x += this.vx; this.y += this.vy;
+
+                if (this.x < 0) this.x = canvas.width; if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height; if (this.y > canvas.height) this.y = 0;
+            }
+            draw() {
+                let angle = Math.atan2(this.vy, this.vx);
+                ctx.translate(this.x, this.y); ctx.rotate(angle);
+                ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-4, 4); ctx.lineTo(-4, -4); ctx.closePath();
+                ctx.fillStyle = '#58a6ff'; ctx.fill();
+                ctx.rotate(-angle); ctx.translate(-this.x, -this.y);
+            }
+        }
+        for(let i=0; i<numBoids; i++) boids.push(new Boid());
+
+        function animate() {
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.4)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let b of boids) { b.update(); b.draw(); }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
