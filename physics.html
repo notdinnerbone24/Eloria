@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module: Particle Physics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .back-btn { align-self: flex-start; text-decoration: none; color: #58a6ff; font-family: 'Fira Code', monospace; border: 1px solid #58a6ff; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(88, 166, 255, 0.1); box-shadow: 0 0 10px rgba(88, 166, 255, 0.3); }
+        .module-container { display: flex; gap: 20px; max-width: 1200px; width: 100%; flex-wrap: wrap; justify-content: center; }
+        canvas { background: #050505; border: 1px solid #30363d; box-shadow: 0 0 20px rgba(0,0,0,0.8); cursor: crosshair; touch-action: none; }
+        .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; flex: 1; min-width: 300px; max-width: 400px; }
+        h1 { font-family: 'Fira Code', monospace; color: #58a6ff; margin-top: 0; }
+        .guide { font-size: 14px; color: #8b949e; margin-bottom: 20px; line-height: 1.5; background: #0d1117; padding: 15px; border-left: 3px solid #58a6ff; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;}
+        button { font-family: 'Fira Code', monospace; background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 12px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        button.active { background: #58a6ff; color: #000; border-color: #58a6ff; box-shadow: 0 0 10px rgba(88, 166, 255, 0.4); }
+        button:hover:not(.active) { background: #30363d; }
+        .full-width { grid-column: 1 / -1; background: #f85149; color: white; border-color: #f85149; }
+        .full-width:hover { background: #da3633; }
+        label { font-family: 'Fira Code', monospace; font-size: 12px; color: #8b949e; display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1;}
+        input[type="range"] { width: 100%; accent-color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    
+    <div class="module-container">
+        <canvas id="physicsCanvas" width="600" height="600"></canvas>
+        
+        <div class="panel">
+            <h1>Particle_Physics</h1>
+            <div class="guide">
+                <strong>System Guide:</strong> Draw elements on the grid to observe elemental interactions and gravity.<br><br>
+                <strong>Sand:</strong> Falls down and stacks.<br>
+                <strong>Water:</strong> Flows horizontally to seek lowest level.<br>
+                <strong>Wall:</strong> Indestructible solid barrier.
+            </div>
+            
+            <div class="controls">
+                <button class="el-btn active" data-type="1">Sand</button>
+                <button class="el-btn" data-type="2">Water</button>
+                <button class="el-btn" data-type="3">Wall</button>
+                <button class="el-btn" data-type="0">Eraser</button>
+                
+                <label>
+                    Brush Size: <span id="brushSizeVal">3</span>
+                    <input type="range" id="brushSlider" min="1" max="10" value="3">
+                </label>
+
+                <button id="clearBtn" class="full-width">PURGE MATRIX</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('physicsCanvas');
+        const ctx = canvas.getContext('2d');
+        const cellSize = 4;
+        const cols = Math.floor(canvas.width / cellSize);
+        const rows = Math.floor(canvas.height / cellSize);
+        
+        let grid = Array(cols).fill().map(() => Array(rows).fill(0));
+        let currentType = 1;
+        let brushSize = 3;
+        let isDrawing = false;
+
+        const colors = { 0: '#050505', 1: '#d29922', 2: '#58a6ff', 3: '#8b949e' };
+
+        document.querySelectorAll('.el-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.el-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentType = parseInt(e.target.dataset.type);
+            });
+        });
+
+        document.getElementById('brushSlider').addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+            document.getElementById('brushSizeVal').innerText = brushSize;
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            grid = Array(cols).fill().map(() => Array(rows).fill(0));
+        });
+
+        function drawParticles(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = Math.floor((e.clientX - rect.left) / cellSize);
+            const mouseY = Math.floor((e.clientY - rect.top) / cellSize);
+
+            for (let i = -brushSize; i <= brushSize; i++) {
+                for (let j = -brushSize; j <= brushSize; j++) {
+                    if (i*i + j*j <= brushSize*brushSize) {
+                        let col = mouseX + i, row = mouseY + j;
+                        if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                            if (currentType === 3 || grid[col][row] === 0 || currentType === 0) grid[col][row] = currentType;
+                        }
+                    }
+                }
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; drawParticles(e); });
+        canvas.addEventListener('mousemove', drawParticles);
+        window.addEventListener('mouseup', () => isDrawing = false);
+
+        function updateGrid() {
+            let nextGrid = Array(cols).fill().map(() => Array(rows).fill(0));
+            
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (grid[i][j] === 3) nextGrid[i][j] = 3;
+                }
+            }
+
+            for (let j = rows - 1; j >= 0; j--) {
+                for (let i = 0; i < cols; i++) {
+                    let type = grid[i][j];
+                    if (type === 1 || type === 2) {
+                        let moved = false;
+                        let dir = Math.random() > 0.5 ? 1 : -1; 
+
+                        if (j + 1 < rows && nextGrid[i][j+1] === 0) { nextGrid[i][j+1] = type; moved = true; } 
+                        else if (j + 1 < rows && i + dir >= 0 && i + dir < cols && nextGrid[i+dir][j+1] === 0) { nextGrid[i+dir][j+1] = type; moved = true; }
+                        else if (j + 1 < rows && i - dir >= 0 && i - dir < cols && nextGrid[i-dir][j+1] === 0) { nextGrid[i-dir][j+1] = type; moved = true; }
+                        else if (type === 2) {
+                            if (i + dir >= 0 && i + dir < cols && nextGrid[i+dir][j] === 0) { nextGrid[i+dir][j] = type; moved = true; } 
+                            else if (i - dir >= 0 && i - dir < cols && nextGrid[i-dir][j] === 0) { nextGrid[i-dir][j] = type; moved = true; }
+                        }
+                        if (!moved) nextGrid[i][j] = type;
+                    }
+                }
+            }
+            grid = nextGrid;
+        }
+
+        function loop() {
+            updateGrid();
+            ctx.fillStyle = colors[0];
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (grid[i][j] !== 0) {
+                        ctx.fillStyle = colors[grid[i][j]];
+                        ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
