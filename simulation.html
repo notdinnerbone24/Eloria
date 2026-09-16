@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module: Langton's Ant</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .back-btn { align-self: flex-start; text-decoration: none; color: #f85149; font-family: 'Fira Code', monospace; border: 1px solid #f85149; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(248, 81, 73, 0.1); box-shadow: 0 0 10px rgba(248, 81, 73, 0.3); }
+        .module-container { display: flex; gap: 20px; max-width: 1200px; width: 100%; flex-wrap: wrap; justify-content: center; }
+        canvas { background: #050505; border: 1px solid #30363d; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; flex: 1; min-width: 300px; max-width: 400px; }
+        h1 { font-family: 'Fira Code', monospace; color: #f85149; margin-top: 0; }
+        .guide { font-size: 14px; color: #8b949e; margin-bottom: 20px; line-height: 1.5; background: #0d1117; padding: 15px; border-left: 3px solid #f85149; }
+        .controls { display: flex; flex-direction: column; gap: 15px; }
+        .btn-group { display: flex; gap: 10px; }
+        button { font-family: 'Fira Code', monospace; background: #da3633; color: #fff; border: none; padding: 10px; border-radius: 4px; cursor: pointer; flex: 1; transition: 0.2s; }
+        button:hover { background: #f85149; }
+        button.alt { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; }
+        button.alt:hover { background: #30363d; border-color: #8b949e; }
+        label { font-family: 'Fira Code', monospace; font-size: 12px; color: #8b949e; display: flex; flex-direction: column; gap: 5px; }
+        input[type="range"] { width: 100%; accent-color: #f85149; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    
+    <div class="module-container">
+        <canvas id="antCanvas" width="700" height="500"></canvas>
+        
+        <div class="panel">
+            <h1>Langton's_Ant</h1>
+            <div class="guide">
+                <strong>System Guide:</strong> A two-dimensional universal Turing machine.<br><br>
+                <strong>Rules:</strong><br>
+                1. At a black square, turn 90° right, flip color, move forward.<br>
+                2. At a red square, turn 90° left, flip color, move forward.
+            </div>
+            
+            <div class="controls">
+                <div class="btn-group">
+                    <button id="playBtn">Play</button>
+                    <button id="resetBtn" class="alt">Reset Matrix</button>
+                </div>
+                
+                <label>
+                    Simulation Speed (Steps per Frame): <span id="speedVal">50</span>
+                    <input type="range" id="speedSlider" min="1" max="200" value="50">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('antCanvas');
+        const ctx = canvas.getContext('2d');
+        const playBtn = document.getElementById('playBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        
+        const cellSize = 4;
+        const cols = canvas.width / cellSize;
+        const rows = canvas.height / cellSize;
+        
+        let grid = [];
+        let ant = { x: Math.floor(cols/2), y: Math.floor(rows/2), dir: 0 }; // 0:UP, 1:RIGHT, 2:DOWN, 3:LEFT
+        let isPlaying = false;
+        
+        function initGrid() {
+            grid = Array(cols).fill().map(() => Array(rows).fill(0));
+            ant = { x: Math.floor(cols/2), y: Math.floor(rows/2), dir: 0 };
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function moveAnt() {
+            let state = grid[ant.x][ant.y];
+            
+            if (state === 0) {
+                ant.dir = (ant.dir + 1) % 4; // Turn right
+                grid[ant.x][ant.y] = 1;
+                ctx.fillStyle = '#f85149'; // Red trail
+            } else {
+                ant.dir = (ant.dir + 3) % 4; // Turn left
+                grid[ant.x][ant.y] = 0;
+                ctx.fillStyle = '#050505'; // Black background
+            }
+            
+            ctx.fillRect(ant.x * cellSize, ant.y * cellSize, cellSize, cellSize);
+            
+            if (ant.dir === 0) ant.y--;
+            else if (ant.dir === 1) ant.x++;
+            else if (ant.dir === 2) ant.y++;
+            else if (ant.dir === 3) ant.x--;
+            
+            // Wrap edges
+            if (ant.x < 0) ant.x = cols - 1;
+            if (ant.x >= cols) ant.x = 0;
+            if (ant.y < 0) ant.y = rows - 1;
+            if (ant.y >= rows) ant.y = 0;
+        }
+
+        function loop() {
+            if (!isPlaying) return;
+            const steps = speedSlider.value;
+            for(let i=0; i<steps; i++) moveAnt();
+            requestAnimationFrame(loop);
+        }
+
+        playBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playBtn.innerText = isPlaying ? 'Pause' : 'Play';
+            if(isPlaying) requestAnimationFrame(loop);
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            isPlaying = false;
+            playBtn.innerText = 'Play';
+            initGrid();
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            document.getElementById('speedVal').innerText = e.target.value;
+        });
+
+        initGrid();
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
