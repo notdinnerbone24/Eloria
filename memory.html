@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise: Memory Matrix</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;}
+        .back-btn { align-self: flex-start; text-decoration: none; color: #3fb950; font-family: 'Fira Code', monospace; border: 1px solid #3fb950; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(63, 185, 80, 0.1); box-shadow: 0 0 10px rgba(63, 185, 80, 0.3); }
+        .game-container { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 30px; text-align: center; max-width: 500px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { font-family: 'Fira Code', monospace; color: #58a6ff; margin-top: 0; }
+        .status { font-family: 'Fira Code', monospace; color: #8b949e; margin-bottom: 20px; height: 24px;}
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .tile { aspect-ratio: 1; background: #050505; border: 2px solid #30363d; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
+        .tile.active { background: #3fb950; border-color: #3fb950; box-shadow: 0 0 15px #3fb950; }
+        .tile.error { background: #f85149; border-color: #f85149; box-shadow: 0 0 15px #f85149; }
+        .tile:active { transform: scale(0.95); }
+        button { font-family: 'Fira Code', monospace; background: #238636; color: #fff; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #2ea043; box-shadow: 0 0 15px rgba(63, 185, 80, 0.4); }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    <div class="game-container">
+        <h1>Memory_Matrix</h1>
+        <div class="status" id="statusText">System Ready. Awaiting start command.</div>
+        <div class="grid" id="grid"></div>
+        <button id="startBtn">START SEQUENCE</button>
+    </div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const statusText = document.getElementById('statusText');
+        const startBtn = document.getElementById('startBtn');
+        let sequence = [], playerSequence = [], level = 1, isPlayerTurn = false;
+
+        for(let i = 0; i < 16; i++) {
+            let tile = document.createElement('div');
+            tile.classList.add('tile'); tile.dataset.index = i;
+            tile.addEventListener('click', handleTileClick);
+            grid.appendChild(tile);
+        }
+        const tiles = document.querySelectorAll('.tile');
+
+        startBtn.addEventListener('click', () => { sequence = []; level = 1; startBtn.style.display = 'none'; nextLevel(); });
+
+        function nextLevel() {
+            playerSequence = []; isPlayerTurn = false;
+            statusText.style.color = '#8b949e'; statusText.innerText = `Memorize Pattern... (Level ${level})`;
+            sequence.push(Math.floor(Math.random() * 16));
+            setTimeout(playSequence, 800);
+        }
+
+        function playSequence() {
+            let i = 0;
+            const interval = setInterval(() => {
+                flashTile(sequence[i]);
+                i++;
+                if (i >= sequence.length) {
+                    clearInterval(interval);
+                    setTimeout(() => { isPlayerTurn = true; statusText.style.color = '#58a6ff'; statusText.innerText = `Your Turn. Input Sequence.`; }, 500);
+                }
+            }, 600);
+        }
+
+        function flashTile(index) {
+            if(window.sfx) sfx.tileFlash(index); // AUDIO TRIGGER
+            tiles[index].classList.add('active');
+            setTimeout(() => tiles[index].classList.remove('active'), 400);
+        }
+
+        function handleTileClick(e) {
+            if (!isPlayerTurn) return;
+            let index = parseInt(e.target.dataset.index);
+            flashTile(index); playerSequence.push(index);
+            checkSequence();
+        }
+
+        function checkSequence() {
+            let currentMove = playerSequence.length - 1;
+            if (playerSequence[currentMove] !== sequence[currentMove]) {
+                isPlayerTurn = false; tiles[playerSequence[currentMove]].classList.add('error');
+                statusText.style.color = '#f85149'; statusText.innerText = `CRITICAL FAILURE. Sequence broken at Level ${level}.`;
+                if(window.sfx) sfx.error(); // AUDIO TRIGGER
+                setTimeout(() => { tiles[playerSequence[currentMove]].classList.remove('error'); startBtn.innerText = "REBOOT SYSTEM"; startBtn.style.display = 'inline-block'; }, 1500);
+                return;
+            }
+            if (playerSequence.length === sequence.length) {
+                isPlayerTurn = false; statusText.style.color = '#3fb950'; statusText.innerText = `Sequence Accepted. Advancing...`;
+                if(window.sfx) sfx.success(); // AUDIO TRIGGER
+                level++; setTimeout(nextLevel, 1000);
+            }
+        }
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
