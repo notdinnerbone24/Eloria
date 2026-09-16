@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise: Cognitive Interference</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;}
+        .back-btn { align-self: flex-start; text-decoration: none; color: #3fb950; font-family: 'Fira Code', monospace; border: 1px solid #3fb950; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(63, 185, 80, 0.1); box-shadow: 0 0 10px rgba(63, 185, 80, 0.3); }
+        .game-container { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 30px; text-align: center; max-width: 600px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { font-family: 'Fira Code', monospace; color: #58a6ff; margin-top: 0; }
+        .stats { display: flex; justify-content: space-between; font-family: 'Fira Code', monospace; color: #8b949e; margin-bottom: 30px; padding: 10px; background: #0d1117; border-radius: 4px; border: 1px solid #30363d;}
+        .stats span { color: #c9d1d9; font-weight: bold; }
+        .word-display { font-size: 64px; font-weight: bold; margin: 40px 0; text-transform: uppercase; letter-spacing: 2px; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .color-btn { font-family: 'Fira Code', monospace; background: #0d1117; color: #fff; border: 2px solid; padding: 20px; font-size: 18px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .color-btn:hover { transform: scale(1.05); }
+        .btn-red { border-color: #f85149; } .btn-red:hover { background: rgba(248, 81, 73, 0.2); }
+        .btn-blue { border-color: #58a6ff; } .btn-blue:hover { background: rgba(88, 166, 255, 0.2); }
+        .btn-green { border-color: #3fb950; } .btn-green:hover { background: rgba(63, 185, 80, 0.2); }
+        .btn-yellow { border-color: #d29922; } .btn-yellow:hover { background: rgba(210, 153, 34, 0.2); }
+        .start-btn { font-family: 'Fira Code', monospace; background: #238636; color: #fff; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; transition: 0.2s; margin-top: 20px;}
+        .start-btn:hover { background: #2ea043; box-shadow: 0 0 15px rgba(63, 185, 80, 0.4); }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    <div class="game-container">
+        <h1>Cognitive_Interference</h1>
+        <p style="color: #8b949e; margin-bottom: 20px;">Select the <strong>COLOR OF THE TEXT</strong>. Ignore the word itself.</p>
+        <div class="stats"><div>Time: <span id="timeDisplay">60</span>s</div><div>Score: <span id="scoreDisplay">0</span></div></div>
+        <div id="gameArea" style="display: none;">
+            <div class="word-display" id="wordDisplay">READY</div>
+            <div class="controls">
+                <button class="color-btn btn-red" onclick="checkAnswer('red')">RED</button>
+                <button class="color-btn btn-blue" onclick="checkAnswer('blue')">BLUE</button>
+                <button class="color-btn btn-green" onclick="checkAnswer('green')">GREEN</button>
+                <button class="color-btn btn-yellow" onclick="checkAnswer('yellow')">YELLOW</button>
+            </div>
+        </div>
+        <button id="startBtn" class="start-btn" onclick="startGame()">INITIATE PROTOCOL</button>
+    </div>
+
+    <script>
+        const colors = [ { name: 'RED', hex: '#f85149', id: 'red' }, { name: 'BLUE', hex: '#58a6ff', id: 'blue' }, { name: 'GREEN', hex: '#3fb950', id: 'green' }, { name: 'YELLOW', hex: '#d29922', id: 'yellow' } ];
+        let score = 0, timeLeft = 60, timer, currentCorrectColor = '';
+        const wordDisplay = document.getElementById('wordDisplay'), scoreDisplay = document.getElementById('scoreDisplay'), timeDisplay = document.getElementById('timeDisplay'), gameArea = document.getElementById('gameArea'), startBtn = document.getElementById('startBtn');
+
+        function startGame() {
+            score = 0; timeLeft = 60; scoreDisplay.innerText = score; timeDisplay.innerText = timeLeft;
+            startBtn.style.display = 'none'; gameArea.style.display = 'block'; nextWord();
+            timer = setInterval(() => { timeLeft--; timeDisplay.innerText = timeLeft; if (timeLeft <= 0) endGame(); }, 1000);
+        }
+
+        function nextWord() {
+            const randomWord = colors[Math.floor(Math.random() * colors.length)];
+            let randomColor = colors[Math.floor(Math.random() * colors.length)];
+            if (Math.random() > 0.3) { while(randomColor.id === randomWord.id) randomColor = colors[Math.floor(Math.random() * colors.length)]; }
+            wordDisplay.innerText = randomWord.name; wordDisplay.style.color = randomColor.hex; currentCorrectColor = randomColor.id;
+        }
+
+        function checkAnswer(selectedColor) {
+            if (selectedColor === currentCorrectColor) {
+                score += 10;
+                if(window.sfx) sfx.success(); // AUDIO TRIGGER
+                document.body.style.backgroundColor = 'rgba(63, 185, 80, 0.1)'; 
+            } else {
+                score -= 5;
+                if(window.sfx) sfx.error(); // AUDIO TRIGGER
+                document.body.style.backgroundColor = 'rgba(248, 81, 73, 0.1)'; 
+            }
+            scoreDisplay.innerText = score;
+            setTimeout(() => document.body.style.backgroundColor = '#0d1117', 150);
+            nextWord();
+        }
+
+        function endGame() {
+            clearInterval(timer); gameArea.style.display = 'none'; startBtn.style.display = 'inline-block'; startBtn.innerText = "RESTART PROTOCOL";
+            wordDisplay.innerText = `SESSION COMPLETE. FINAL SCORE: ${score}`; wordDisplay.style.color = '#c9d1d9'; wordDisplay.style.fontSize = '24px';
+            gameArea.style.display = 'block'; document.querySelector('.controls').style.display = 'none';
+        }
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
