@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eloria | Terminal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <div id="welcome-screen" class="screen active">
+        <canvas id="boids-bg"></canvas>
+        <div class="welcome-content">
+            <h1 class="title" data-text="> Eloria_"><span>></span> Eloria_</h1>
+            <div class="typing-container">
+                <p class="subtitle">System standby... awaiting input.</p>
+            </div>
+            <button id="explore-btn" class="explore-btn">INITIALIZE EXPLORATION</button>
+        </div>
+    </div>
+
+    <div id="modules-screen" class="screen hidden">
+        <div class="container">
+            <h3 class="section-title">Core Simulations</h3>
+            <div class="topic-grid" style="margin-bottom: 60px;">
+                <a href="simulation.html" class="card" style="--delay: 0.05s">
+                    <div class="card-icon">🐜</div>
+                    <h4>Langton's_Ant</h4>
+                    <p>Cellular automata on a 2D matrix.</p>
+                </a>
+                <a href="conway.html" class="card" style="--delay: 0.1s">
+                    <div class="card-icon">🦠</div>
+                    <h4>Game_of_Life</h4>
+                    <p>Population dynamics and survival.</p>
+                </a>
+                <a href="boids.html" class="card" style="--delay: 0.15s">
+                    <div class="card-icon">🦅</div>
+                    <h4>Boids_Algorithm</h4>
+                    <p>Emergent swarming behavior.</p>
+                </a>
+                <a href="physics.html" class="card" style="--delay: 0.2s">
+                    <div class="card-icon">🧪</div>
+                    <h4>Particle_Physics</h4>
+                    <p>Grid-based elemental interactions.</p>
+                </a>
+                <a href="fractals.html" class="card" style="--delay: 0.25s">
+                    <div class="card-icon">🌿</div>
+                    <h4>L-System_Fractals</h4>
+                    <p>Procedural botanical growth structures.</p>
+                </a>
+                <a href="pendulum.html" class="card" style="--delay: 0.3s">
+                    <div class="card-icon">🌀</div>
+                    <h4>Chaos_Pendulum</h4>
+                    <p>Unpredictable physics and chaos theory.</p>
+                </a>
+            </div>
+
+            <h3 class="section-title">Cognitive Exercises</h3>
+            <div class="topic-grid">
+                <a href="memory.html" class="card" style="--delay: 0.35s">
+                    <div class="card-icon">🧠</div>
+                    <h4>Memory_Matrix</h4>
+                    <p>Short-term memory visual recall sequence.</p>
+                </a>
+                <a href="stroop.html" class="card" style="--delay: 0.4s">
+                    <div class="card-icon">👁️</div>
+                    <h4>Cognitive_Interference</h4>
+                    <p>Stroop effect test for mental flexibility.</p>
+                </a>
+                <a href="neural.html" class="card" style="--delay: 0.45s">
+                    <div class="card-icon">🧮</div>
+                    <h4>Neural_Computation</h4>
+                    <p>Rapid mental arithmetic under time pressure.</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const exploreBtn = document.getElementById('explore-btn');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const modulesScreen = document.getElementById('modules-screen');
+
+        exploreBtn.addEventListener('click', () => {
+            welcomeScreen.classList.remove('active');
+            welcomeScreen.classList.add('fade-out');
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+                modulesScreen.style.display = 'block';
+                void modulesScreen.offsetWidth; 
+                modulesScreen.classList.remove('hidden');
+                modulesScreen.classList.add('active');
+            }, 300); 
+        });
+
+        const canvas = document.getElementById('boids-bg');
+        const ctx = canvas.getContext('2d');
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+        const boids = []; const numBoids = window.innerWidth > 800 ? 120 : 60;
+        let targetSep = 1.5, targetAli = 1.0, targetCoh = 1.0;
+        let curSep = 1.5, curAli = 1.0, curCoh = 1.0;
+
+        function mutateForces() {
+            targetSep = Math.random() * 2.5 + 0.5; targetAli = Math.random() * 2.5 + 0.5; targetCoh = Math.random() * 2.5 + 0.5; 
+            setTimeout(mutateForces, Math.random() * 4000 + 2000);
+        }
+        mutateForces();
+
+        class Boid {
+            constructor() {
+                this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 4; this.vy = (Math.random() - 0.5) * 4;
+            }
+            update() {
+                let sep = {x: 0, y: 0}, ali = {x: 0, y: 0}, coh = {x: 0, y: 0}; let total = 0;
+                for (let other of boids) {
+                    let d = Math.hypot(this.x - other.x, this.y - other.y);
+                    if (other !== this && d < 60) {
+                        sep.x += (this.x - other.x) / d; sep.y += (this.y - other.y) / d;
+                        ali.x += other.vx; ali.y += other.vy; coh.x += other.x; coh.y += other.y; total++;
+                    }
+                }
+                if (total > 0) {
+                    ali.x = (ali.x / total) * 0.05 * curAli; ali.y = (ali.y / total) * 0.05 * curAli;
+                    coh.x = ((coh.x / total) - this.x) * 0.01 * curCoh; coh.y = ((coh.y / total) - this.y) * 0.01 * curCoh;
+                    sep.x = sep.x * 0.1 * curSep; sep.y = sep.y * 0.1 * curSep;
+                    this.vx += ali.x + coh.x + sep.x; this.vy += ali.y + coh.y + sep.y;
+                }
+                let speed = Math.hypot(this.vx, this.vy);
+                if (speed > 3) { this.vx = (this.vx / speed) * 3; this.vy = (this.vy / speed) * 3; }
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0) this.x = canvas.width; if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height; if (this.y > canvas.height) this.y = 0;
+            }
+            draw() {
+                let angle = Math.atan2(this.vy, this.vx); ctx.translate(this.x, this.y); ctx.rotate(angle);
+                ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-3, 3); ctx.lineTo(-3, -3); ctx.closePath();
+                ctx.fillStyle = 'rgba(63, 185, 80, 0.7)'; ctx.fill(); ctx.rotate(-angle); ctx.translate(-this.x, -this.y);
+            }
+        }
+        for(let i=0; i<numBoids; i++) boids.push(new Boid());
+
+        function animate() {
+            if (welcomeScreen.style.display === 'none') return;
+            curSep += (targetSep - curSep) * 0.02; curAli += (targetAli - curAli) * 0.02; curCoh += (targetCoh - curCoh) * 0.02;
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.3)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let b of boids) { b.update(); b.draw(); }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
