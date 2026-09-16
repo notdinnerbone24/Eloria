@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module: Game of Life</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .back-btn { align-self: flex-start; text-decoration: none; color: #3fb950; font-family: 'Fira Code', monospace; border: 1px solid #3fb950; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(63, 185, 80, 0.1); box-shadow: 0 0 10px rgba(63, 185, 80, 0.3); }
+        .module-container { display: flex; gap: 20px; max-width: 1200px; width: 100%; flex-wrap: wrap; justify-content: center; }
+        canvas { background: #050505; border: 1px solid #30363d; box-shadow: 0 0 20px rgba(0,0,0,0.8); cursor: crosshair; }
+        .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; flex: 1; min-width: 300px; max-width: 400px; }
+        h1, h3 { font-family: 'Fira Code', monospace; color: #58a6ff; margin-top: 0; }
+        .guide { font-size: 14px; color: #8b949e; margin-bottom: 20px; line-height: 1.5; background: #0d1117; padding: 15px; border-left: 3px solid #58a6ff; }
+        .guide strong { color: #c9d1d9; }
+        .controls { display: flex; flex-direction: column; gap: 15px; }
+        .btn-group { display: flex; gap: 10px; }
+        button { font-family: 'Fira Code', monospace; background: #238636; color: #fff; border: none; padding: 10px; border-radius: 4px; cursor: pointer; flex: 1; transition: 0.2s; }
+        button:hover { background: #2ea043; }
+        button.alt { background: #21262d; border: 1px solid #30363d; }
+        button.alt:hover { background: #30363d; border-color: #8b949e; }
+        label { font-family: 'Fira Code', monospace; font-size: 12px; color: #8b949e; display: flex; flex-direction: column; gap: 5px; }
+        input[type="range"] { width: 100%; accent-color: #3fb950; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    
+    <div class="module-container">
+        <canvas id="simCanvas" width="700" height="500"></canvas>
+        
+        <div class="panel">
+            <h1>Game_of_Life</h1>
+            <div class="guide">
+                <strong>System Guide:</strong> Click and drag on the grid to draw live cells.<br><br>
+                <strong>Rules of Survival:</strong><br>
+                1. <strong>Underpopulation:</strong> Cell dies if < 2 neighbors.<br>
+                2. <strong>Survival:</strong> Cell lives if 2 or 3 neighbors.<br>
+                3. <strong>Overpopulation:</strong> Cell dies if > 3 neighbors.<br>
+                4. <strong>Reproduction:</strong> Dead cell revives if exactly 3 neighbors.
+            </div>
+            
+            <div class="controls">
+                <div class="btn-group">
+                    <button id="playBtn">Play</button>
+                    <button id="stepBtn" class="alt">Step</button>
+                    <button id="clearBtn" class="alt">Clear</button>
+                </div>
+                <button id="randomBtn" class="alt">Randomize Matrix</button>
+                
+                <label>
+                    Simulation Speed: <span id="speedVal">Medium</span>
+                    <input type="range" id="speedSlider" min="1" max="60" value="30">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const playBtn = document.getElementById('playBtn');
+        
+        const cellSize = 5;
+        const cols = canvas.width / cellSize;
+        const rows = canvas.height / cellSize;
+        
+        let grid = new Uint8Array(cols * rows);
+        let nextGrid = new Uint8Array(cols * rows);
+        let isPlaying = false;
+        let isDrawing = false;
+        let lastFrameTime = 0;
+        
+        function randomize() {
+            for(let i=0; i<grid.length; i++) grid[i] = Math.random() > 0.85 ? 1 : 0;
+            drawGrid();
+        }
+
+        function drawGrid() {
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#3fb950';
+            for(let y=0; y<rows; y++) {
+                for(let x=0; x<cols; x++) {
+                    if(grid[y * cols + x]) {
+                        ctx.fillRect(x * cellSize, y * cellSize, cellSize-1, cellSize-1);
+                    }
+                }
+            }
+        }
+
+        function countNeighbors(x, y) {
+            let sum = 0;
+            for(let i=-1; i<2; i++) {
+                for(let j=-1; j<2; j++) {
+                    let col = (x + i + cols) % cols;
+                    let row = (y + j + rows) % rows;
+                    sum += grid[row * cols + col];
+                }
+            }
+            return sum - grid[y * cols + x];
+        }
+
+        function update() {
+            for(let y=0; y<rows; y++) {
+                for(let x=0; x<cols; x++) {
+                    let state = grid[y * cols + x];
+                    let neighbors = countNeighbors(x, y);
+                    let idx = y * cols + x;
+                    
+                    if (state === 0 && neighbors === 3) nextGrid[idx] = 1;
+                    else if (state === 1 && (neighbors < 2 || neighbors > 3)) nextGrid[idx] = 0;
+                    else nextGrid[idx] = state;
+                }
+            }
+            grid.set(nextGrid);
+        }
+
+        function loop(timestamp) {
+            if (!isPlaying) return;
+            const fps = document.getElementById('speedSlider').value;
+            const delay = 1000 / fps;
+            
+            if (timestamp - lastFrameTime >= delay) {
+                update();
+                drawGrid();
+                lastFrameTime = timestamp;
+            }
+            requestAnimationFrame(loop);
+        }
+
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        window.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mousemove', (e) => {
+            if(!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / cellSize);
+            const y = Math.floor((e.clientY - rect.top) / cellSize);
+            if(x >= 0 && x < cols && y >= 0 && y < rows) {
+                grid[y * cols + x] = 1;
+                drawGrid();
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playBtn.innerText = isPlaying ? 'Pause' : 'Play';
+            if(isPlaying) requestAnimationFrame(loop);
+        });
+        document.getElementById('stepBtn').addEventListener('click', () => { update(); drawGrid(); });
+        document.getElementById('clearBtn').addEventListener('click', () => { grid.fill(0); drawGrid(); });
+        document.getElementById('randomBtn').addEventListener('click', randomize);
+        
+        randomize();
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
