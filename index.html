@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eloria | Terminal</title>
+    <title>Eloria | Terminal OS</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,64 +20,125 @@
         </div>
     </div>
 
-    <div id="modules-screen" class="screen hidden">
+    <div id="modules-screen" class="screen">
         <div class="container">
-            <h3 class="section-title">Core Simulations</h3>
-            <div class="topic-grid" style="margin-bottom: 60px;">
-                <a href="simulation.html" class="card" style="--delay: 0.05s">
+            
+            <!-- Floating Icon Navigation -->
+            <nav class="system-nav">
+                <button class="nav-btn active" data-filter="all">
+                    <span class="icon">💠</span><span class="tooltip">ALL_MODULES</span>
+                </button>
+                <button class="nav-btn" data-filter="simulations">
+                    <span class="icon">🧬</span><span class="tooltip">SIMULATIONS</span>
+                </button>
+                <button class="nav-btn" data-filter="games">
+                    <span class="icon">🕹️</span><span class="tooltip">GAMES</span>
+                </button>
+                <button class="nav-btn" data-filter="animations">
+                    <span class="icon">✨</span><span class="tooltip">ANIMATIONS</span>
+                </button>
+                <button class="nav-btn" data-filter="audio">
+                    <span class="icon">🎧</span><span class="tooltip">AUDIO_LAB</span>
+                </button>
+                <button class="nav-btn" data-filter="crypto">
+                    <span class="icon">🔐</span><span class="tooltip">CRYPTOGRAPHY</span>
+                </button>
+                <button class="nav-btn" data-filter="tools">
+                    <span class="icon">⚙️</span><span class="tooltip">SYSTEM_TOOLS</span>
+                </button>
+            </nav>
+
+            <div class="topic-grid" id="module-grid">
+                <!-- SIMULATIONS -->
+                <a href="simulation.html" class="card pop-in" data-category="simulations" style="animation-delay: 0.05s">
                     <div class="card-icon">🐜</div>
                     <h4>Langton's_Ant</h4>
-                    <p>Cellular automata on a 2D matrix.</p>
+                    <p>Advanced multi-state swarm sandbox.</p>
                 </a>
-                <a href="conway.html" class="card" style="--delay: 0.1s">
+                <a href="conway.html" class="card pop-in" data-category="simulations" style="animation-delay: 0.1s">
                     <div class="card-icon">🦠</div>
                     <h4>Game_of_Life</h4>
                     <p>Population dynamics and survival.</p>
                 </a>
-                <a href="boids.html" class="card" style="--delay: 0.15s">
+                <a href="boids.html" class="card pop-in" data-category="simulations" style="animation-delay: 0.15s">
                     <div class="card-icon">🦅</div>
                     <h4>Boids_Algorithm</h4>
                     <p>Emergent swarming behavior.</p>
                 </a>
-                <a href="physics.html" class="card" style="--delay: 0.2s">
+                <a href="physics.html" class="card pop-in" data-category="simulations" style="animation-delay: 0.2s">
                     <div class="card-icon">🧪</div>
                     <h4>Particle_Physics</h4>
                     <p>Grid-based elemental interactions.</p>
                 </a>
-                <a href="fractals.html" class="card" style="--delay: 0.25s">
+                <a href="fractals.html" class="card pop-in" data-category="simulations" style="animation-delay: 0.25s">
                     <div class="card-icon">🌿</div>
                     <h4>L-System_Fractals</h4>
                     <p>Procedural botanical growth structures.</p>
                 </a>
-                <a href="pendulum.html" class="card" style="--delay: 0.3s">
+                <a href="pendulum.html" class="card pop-in" data-category="simulations" style="animation-delay: 0.3s">
                     <div class="card-icon">🌀</div>
                     <h4>Chaos_Pendulum</h4>
                     <p>Unpredictable physics and chaos theory.</p>
                 </a>
-            </div>
 
-            <h3 class="section-title">Cognitive Exercises</h3>
-            <div class="topic-grid">
-                <a href="memory.html" class="card" style="--delay: 0.35s">
+                <!-- GAMES -->
+                <a href="memory.html" class="card pop-in" data-category="games" style="animation-delay: 0.35s">
                     <div class="card-icon">🧠</div>
                     <h4>Memory_Matrix</h4>
                     <p>Short-term memory visual recall sequence.</p>
                 </a>
-                <a href="stroop.html" class="card" style="--delay: 0.4s">
+                <a href="stroop.html" class="card pop-in" data-category="games" style="animation-delay: 0.4s">
                     <div class="card-icon">👁️</div>
                     <h4>Cognitive_Interference</h4>
                     <p>Stroop effect test for mental flexibility.</p>
                 </a>
-                <a href="neural.html" class="card" style="--delay: 0.45s">
+                <a href="neural.html" class="card pop-in" data-category="games" style="animation-delay: 0.45s">
                     <div class="card-icon">🧮</div>
                     <h4>Neural_Computation</h4>
                     <p>Rapid mental arithmetic under time pressure.</p>
+                </a>
+
+                <!-- ANIMATIONS -->
+                <a href="#" class="card pop-in" data-category="animations" style="animation-delay: 0.5s; border-left-color: #a371f7;">
+                    <div class="card-icon">🌧️</div>
+                    <h4 style="color: #a371f7;">Matrix_Rain</h4>
+                    <p>Cascading terminal data streams.</p>
+                </a>
+                <a href="#" class="card pop-in" data-category="animations" style="animation-delay: 0.55s; border-left-color: #a371f7;">
+                    <div class="card-icon">🕸️</div>
+                    <h4 style="color: #a371f7;">Network_Nodes</h4>
+                    <p>Interactive neural network webbing.</p>
+                </a>
+
+                <!-- AUDIO LAB -->
+                <a href="#" class="card pop-in" data-category="audio" style="animation-delay: 0.6s; border-left-color: #e3b341;">
+                    <div class="card-icon">🎹</div>
+                    <h4 style="color: #e3b341;">Cyber_Sequencer</h4>
+                    <p>16-step retro synthesizer looping engine.</p>
+                </a>
+                <a href="#" class="card pop-in" data-category="audio" style="animation-delay: 0.65s; border-left-color: #e3b341;">
+                    <div class="card-icon">📻</div>
+                    <h4 style="color: #e3b341;">Oscilloscope</h4>
+                    <p>Real-time waveform visualizer.</p>
+                </a>
+
+                <!-- CRYPTO & TOOLS -->
+                <a href="#" class="card pop-in" data-category="crypto" style="animation-delay: 0.7s; border-left-color: #f85149;">
+                    <div class="card-icon">🔐</div>
+                    <h4 style="color: #f85149;">Cipher_Terminal</h4>
+                    <p>Encrypt and decrypt messages instantly.</p>
+                </a>
+                <a href="#" class="card pop-in" data-category="tools" style="animation-delay: 0.75s; border-left-color: #8b949e;">
+                    <div class="card-icon">📟</div>
+                    <h4 style="color: #c9d1d9;">Hex_Matrix</h4>
+                    <p>Live text to Binary/Hex converter.</p>
                 </a>
             </div>
         </div>
     </div>
 
     <script>
+        // Welcome Screen Transition Logic
         const exploreBtn = document.getElementById('explore-btn');
         const welcomeScreen = document.getElementById('welcome-screen');
         const modulesScreen = document.getElementById('modules-screen');
@@ -88,69 +149,70 @@
             setTimeout(() => {
                 welcomeScreen.style.display = 'none';
                 modulesScreen.style.display = 'block';
-                void modulesScreen.offsetWidth; 
-                modulesScreen.classList.remove('hidden');
+                void modulesScreen.offsetWidth; // Force Reflow
                 modulesScreen.classList.add('active');
-            }, 300); 
+            }, 500); 
         });
 
+        // Dynamic Routing & Staggered Animation Logic
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const cards = document.querySelectorAll('.card');
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const filter = btn.dataset.filter;
+                let delayCounter = 0;
+
+                cards.forEach(card => {
+                    card.classList.remove('pop-in');
+                    card.style.opacity = '0'; 
+
+                    if (filter === 'all' || card.dataset.category === filter) {
+                        card.classList.remove('hidden');
+                        void card.offsetWidth; 
+                        card.style.animationDelay = `${delayCounter * 0.08}s`;
+                        card.classList.add('pop-in');
+                        delayCounter++;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        // Mutating Boids Background Logic
         const canvas = document.getElementById('boids-bg');
         const ctx = canvas.getContext('2d');
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
-        const boids = []; const numBoids = window.innerWidth > 800 ? 120 : 60;
-        let targetSep = 1.5, targetAli = 1.0, targetCoh = 1.0;
-        let curSep = 1.5, curAli = 1.0, curCoh = 1.0;
+        const boids = []; const numBoids = window.innerWidth > 800 ? 100 : 50;
+        for(let i=0; i<numBoids; i++) boids.push({
+            x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4
+        });
 
-        function mutateForces() {
-            targetSep = Math.random() * 2.5 + 0.5; targetAli = Math.random() * 2.5 + 0.5; targetCoh = Math.random() * 2.5 + 0.5; 
-            setTimeout(mutateForces, Math.random() * 4000 + 2000);
-        }
-        mutateForces();
-
-        class Boid {
-            constructor() {
-                this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 4; this.vy = (Math.random() - 0.5) * 4;
-            }
-            update() {
-                let sep = {x: 0, y: 0}, ali = {x: 0, y: 0}, coh = {x: 0, y: 0}; let total = 0;
-                for (let other of boids) {
-                    let d = Math.hypot(this.x - other.x, this.y - other.y);
-                    if (other !== this && d < 60) {
-                        sep.x += (this.x - other.x) / d; sep.y += (this.y - other.y) / d;
-                        ali.x += other.vx; ali.y += other.vy; coh.x += other.x; coh.y += other.y; total++;
-                    }
-                }
-                if (total > 0) {
-                    ali.x = (ali.x / total) * 0.05 * curAli; ali.y = (ali.y / total) * 0.05 * curAli;
-                    coh.x = ((coh.x / total) - this.x) * 0.01 * curCoh; coh.y = ((coh.y / total) - this.y) * 0.01 * curCoh;
-                    sep.x = sep.x * 0.1 * curSep; sep.y = sep.y * 0.1 * curSep;
-                    this.vx += ali.x + coh.x + sep.x; this.vy += ali.y + coh.y + sep.y;
-                }
-                let speed = Math.hypot(this.vx, this.vy);
-                if (speed > 3) { this.vx = (this.vx / speed) * 3; this.vy = (this.vy / speed) * 3; }
-                this.x += this.vx; this.y += this.vy;
-                if (this.x < 0) this.x = canvas.width; if (this.x > canvas.width) this.x = 0;
-                if (this.y < 0) this.y = canvas.height; if (this.y > canvas.height) this.y = 0;
-            }
-            draw() {
-                let angle = Math.atan2(this.vy, this.vx); ctx.translate(this.x, this.y); ctx.rotate(angle);
-                ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-3, 3); ctx.lineTo(-3, -3); ctx.closePath();
-                ctx.fillStyle = 'rgba(63, 185, 80, 0.7)'; ctx.fill(); ctx.rotate(-angle); ctx.translate(-this.x, -this.y);
-            }
-        }
-        for(let i=0; i<numBoids; i++) boids.push(new Boid());
-
-        function animate() {
+        function animateBg() {
             if (welcomeScreen.style.display === 'none') return;
-            curSep += (targetSep - curSep) * 0.02; curAli += (targetAli - curAli) * 0.02; curCoh += (targetCoh - curCoh) * 0.02;
             ctx.fillStyle = 'rgba(5, 5, 5, 0.3)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            for (let b of boids) { b.update(); b.draw(); }
-            requestAnimationFrame(animate);
+            
+            boids.forEach(b => {
+                b.x += b.vx; b.y += b.vy;
+                if (b.x < 0 || b.x > canvas.width) b.vx *= -1;
+                if (b.y < 0 || b.y > canvas.height) b.vy *= -1;
+                
+                let angle = Math.atan2(b.vy, b.vx);
+                ctx.translate(b.x, b.y); ctx.rotate(angle);
+                ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-3, 3); ctx.lineTo(-3, -3); ctx.closePath();
+                ctx.fillStyle = 'rgba(63, 185, 80, 0.5)'; ctx.fill(); 
+                ctx.rotate(-angle); ctx.translate(-b.x, -b.y);
+            });
+            requestAnimationFrame(animateBg);
         }
-        animate();
+        animateBg();
     </script>
     <script src="audio.js"></script>
 </body>
