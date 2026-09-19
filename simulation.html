@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Module: Langton's Ant</title>
+    <title>Module: Langton's Ant Sandbox</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
@@ -21,6 +21,7 @@
         button.alt { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; }
         button.alt:hover { background: #30363d; border-color: #8b949e; }
         label { font-family: 'Fira Code', monospace; font-size: 12px; color: #8b949e; display: flex; flex-direction: column; gap: 5px; }
+        input[type="text"] { font-family: 'Fira Code', monospace; background: #0d1117; color: #58a6ff; border: 1px solid #30363d; padding: 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px;}
         input[type="range"] { width: 100%; accent-color: #f85149; }
     </style>
 </head>
@@ -33,22 +34,33 @@
         <div class="panel">
             <h1>Langton's_Ant</h1>
             <div class="guide">
-                <strong>System Guide:</strong> A two-dimensional universal Turing machine.<br><br>
-                <strong>Rules:</strong><br>
-                1. At a black square, turn 90° right, flip color, move forward.<br>
-                2. At a red square, turn 90° left, flip color, move forward.
+                <strong>Advanced Swarm Logic</strong><br>
+                R = Right (90°)<br>
+                L = Left (90°)<br>
+                F = Forward<br>
+                U = U-Turn (180°)
             </div>
             
             <div class="controls">
+                <label>
+                    Rule String (Use R, L, F, U)
+                    <input type="text" id="ruleInput" value="RL" maxlength="12">
+                </label>
+
+                <label>
+                    Ant Swarm Count: <span id="antVal">1</span>
+                    <input type="range" id="antSlider" min="1" max="50" value="1">
+                </label>
+
+                <label>
+                    Simulation Speed: <span id="speedVal">50</span>
+                    <input type="range" id="speedSlider" min="1" max="300" value="50">
+                </label>
+
                 <div class="btn-group">
                     <button id="playBtn">Play</button>
                     <button id="resetBtn" class="alt">Reset Matrix</button>
                 </div>
-                
-                <label>
-                    Simulation Speed (Steps per Frame): <span id="speedVal">50</span>
-                    <input type="range" id="speedSlider" min="1" max="200" value="50">
-                </label>
             </div>
         </div>
     </div>
@@ -58,53 +70,75 @@
         const ctx = canvas.getContext('2d');
         const playBtn = document.getElementById('playBtn');
         const speedSlider = document.getElementById('speedSlider');
+        const antSlider = document.getElementById('antSlider');
+        const ruleInput = document.getElementById('ruleInput');
         
         const cellSize = 4;
         const cols = canvas.width / cellSize;
         const rows = canvas.height / cellSize;
         
+        // Extended color palette for multi-state rules
+        const colors = ['#050505', '#f85149', '#3fb950', '#58a6ff', '#a371f7', '#d29922', '#e6edf3', '#ff7b72', '#79c0ff', '#d2a8ff', '#f0883e', '#2ea043'];
+        
         let grid = [];
-        let ant = { x: Math.floor(cols/2), y: Math.floor(rows/2), dir: 0 }; // 0:UP, 1:RIGHT, 2:DOWN, 3:LEFT
+        let ants = [];
         let isPlaying = false;
+        let rules = "RL";
         
         function initGrid() {
             grid = Array(cols).fill().map(() => Array(rows).fill(0));
-            ant = { x: Math.floor(cols/2), y: Math.floor(rows/2), dir: 0 };
-            ctx.fillStyle = '#050505';
+            rules = ruleInput.value.toUpperCase().replace(/[^RLFU]/g, '');
+            if(rules.length === 0) rules = "RL";
+            ruleInput.value = rules;
+
+            ants = [];
+            const numAnts = parseInt(antSlider.value);
+            for(let i=0; i<numAnts; i++) {
+                ants.push({
+                    x: Math.floor(cols/2) + (Math.floor(Math.random() * 20) - 10),
+                    y: Math.floor(rows/2) + (Math.floor(Math.random() * 20) - 10),
+                    dir: Math.floor(Math.random() * 4) // 0:UP, 1:RIGHT, 2:DOWN, 3:LEFT
+                });
+            }
+
+            ctx.fillStyle = colors[0];
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        function moveAnt() {
-            let state = grid[ant.x][ant.y];
-            
-            if (state === 0) {
-                ant.dir = (ant.dir + 1) % 4; // Turn right
-                grid[ant.x][ant.y] = 1;
-                ctx.fillStyle = '#f85149'; // Red trail
-            } else {
-                ant.dir = (ant.dir + 3) % 4; // Turn left
-                grid[ant.x][ant.y] = 0;
-                ctx.fillStyle = '#050505'; // Black background
+        function moveAnts() {
+            for (let ant of ants) {
+                let state = grid[ant.x][ant.y];
+                let currentRule = rules[state % rules.length];
+
+                // Turn Logic (F, U, R, L)
+                if (currentRule === 'R') ant.dir = (ant.dir + 1) % 4;
+                else if (currentRule === 'L') ant.dir = (ant.dir + 3) % 4;
+                else if (currentRule === 'U') ant.dir = (ant.dir + 2) % 4;
+                // 'F' implies no change to direction
+
+                // State mutation
+                grid[ant.x][ant.y] = (state + 1) % rules.length;
+                ctx.fillStyle = colors[grid[ant.x][ant.y]];
+                ctx.fillRect(ant.x * cellSize, ant.y * cellSize, cellSize, cellSize);
+
+                // Move forward
+                if (ant.dir === 0) ant.y--;
+                else if (ant.dir === 1) ant.x++;
+                else if (ant.dir === 2) ant.y++;
+                else if (ant.dir === 3) ant.x--;
+
+                // Wrap edges seamlessly
+                if (ant.x < 0) ant.x = cols - 1;
+                if (ant.x >= cols) ant.x = 0;
+                if (ant.y < 0) ant.y = rows - 1;
+                if (ant.y >= rows) ant.y = 0;
             }
-            
-            ctx.fillRect(ant.x * cellSize, ant.y * cellSize, cellSize, cellSize);
-            
-            if (ant.dir === 0) ant.y--;
-            else if (ant.dir === 1) ant.x++;
-            else if (ant.dir === 2) ant.y++;
-            else if (ant.dir === 3) ant.x--;
-            
-            // Wrap edges
-            if (ant.x < 0) ant.x = cols - 1;
-            if (ant.x >= cols) ant.x = 0;
-            if (ant.y < 0) ant.y = rows - 1;
-            if (ant.y >= rows) ant.y = 0;
         }
 
         function loop() {
             if (!isPlaying) return;
             const steps = speedSlider.value;
-            for(let i=0; i<steps; i++) moveAnt();
+            for(let i=0; i<steps; i++) moveAnts();
             requestAnimationFrame(loop);
         }
 
@@ -120,9 +154,12 @@
             initGrid();
         });
 
-        speedSlider.addEventListener('input', (e) => {
-            document.getElementById('speedVal').innerText = e.target.value;
+        speedSlider.addEventListener('input', (e) => document.getElementById('speedVal').innerText = e.target.value);
+        antSlider.addEventListener('input', (e) => {
+            document.getElementById('antVal').innerText = e.target.value;
+            initGrid();
         });
+        ruleInput.addEventListener('change', initGrid);
 
         initGrid();
     </script>
