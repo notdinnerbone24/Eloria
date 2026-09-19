@@ -6,19 +6,16 @@ const audioCtx = new AudioContext();
 const sfx = {
     playTone: function(freq, type, duration, vol = 0.05) {
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         
         osc.type = type;
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        
         gain.gain.setValueAtTime(vol, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
         
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
     },
@@ -42,9 +39,8 @@ const sfx = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Add audio to buttons, cards, and interactive elements
-    const interactables = document.querySelectorAll('.card, button, .back-btn, .num-btn, .color-btn, select, input[type="range"]');
-    
+    // Add audio to buttons, cards, and interactive elements dynamically
+    const interactables = document.querySelectorAll('.card, button, .back-btn, .num-btn, .color-btn, .nav-btn, select, input[type="range"]');
     interactables.forEach(el => {
         el.addEventListener('mouseenter', sfx.hover);
         el.addEventListener('click', sfx.click);
