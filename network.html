@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Module: Network Nodes</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+        body { margin: 0; background-color: #0d1117; overflow: hidden; }
+        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #a371f7; font-family: 'Fira Code', monospace; border: 1px solid #a371f7; padding: 8px 16px; border-radius: 4px; z-index: 10; transition: 0.2s; background: rgba(13,17,23,0.8); }
+        .back-btn:hover { background: rgba(163, 113, 247, 0.2); }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    <canvas id="netCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('netCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        
+        let nodes = [];
+        for(let i=0; i<150; i++) nodes.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2 });
+
+        function animate() {
+            ctx.fillStyle = '#0d1117'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#a371f7'; ctx.strokeStyle = '#a371f7';
+            
+            for(let i=0; i<nodes.length; i++) {
+                let n = nodes[i];
+                n.x += n.vx; n.y += n.vy;
+                if(n.x < 0 || n.x > canvas.width) n.vx *= -1; 
+                if(n.y < 0 || n.y > canvas.height) n.vy *= -1;
+                
+                ctx.beginPath(); ctx.arc(n.x, n.y, 2, 0, Math.PI*2); ctx.fill();
+                
+                for(let j=i+1; j<nodes.length; j++) {
+                    let d = Math.hypot(n.x-nodes[j].x, n.y-nodes[j].y);
+                    if(d < 120) {
+                        ctx.globalAlpha = 1 - (d/120);
+                        ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(animate);
+        }
+        animate();
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
