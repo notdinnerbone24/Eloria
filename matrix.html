@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Module: Matrix Rain</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+        body { margin: 0; background-color: #0d1117; overflow: hidden; display: flex; flex-direction: column; }
+        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #a371f7; font-family: 'Fira Code', monospace; border: 1px solid #a371f7; padding: 8px 16px; border-radius: 4px; z-index: 10; transition: 0.2s; background: rgba(13,17,23,0.8); }
+        .back-btn:hover { background: rgba(163, 113, 247, 0.2); box-shadow: 0 0 15px rgba(163, 113, 247, 0.5); }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    <canvas id="matrixCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function draw() {
+            ctx.fillStyle = 'rgba(13, 17, 23, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#a371f7';
+            ctx.font = fontSize + 'px "Fira Code"';
+            
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+    <script src="audio.js"></script>
+</body>
+</html>
