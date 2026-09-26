@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Module: Cipher Terminal</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .back-btn { align-self: flex-start; text-decoration: none; color: #f85149; font-family: 'Fira Code', monospace; border: 1px solid #f85149; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(248, 81, 73, 0.1); }
+        .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 30px; width: 100%; max-width: 800px; }
+        h1 { font-family: 'Fira Code', monospace; color: #f85149; margin-top: 0; }
+        textarea { width: 100%; height: 120px; background: #050505; color: #58a6ff; font-family: 'Fira Code', monospace; border: 1px solid #30363d; padding: 10px; border-radius: 4px; margin-bottom: 15px; resize: none; box-sizing: border-box;}
+        select, button { font-family: 'Fira Code', monospace; padding: 10px; background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; cursor: pointer; }
+        button { background: #f85149; color: #fff; border: none; font-weight: bold; }
+        button:hover { background: #da3633; }
+        .controls { display: flex; gap: 10px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    <div class="panel">
+        <h1>Cipher_Terminal</h1>
+        <textarea id="inputBox" placeholder="Enter message here..."></textarea>
+        
+        <div class="controls">
+            <select id="cipherMode">
+                <option value="rot13">ROT13 (Shift 13)</option>
+                <option value="base64">Base64</option>
+            </select>
+            <button id="encryptBtn">PROCESS DATA</button>
+        </div>
+
+        <textarea id="outputBox" placeholder="Output will appear here..." readonly style="color: #f85149;"></textarea>
+    </div>
+    <script src="audio.js"></script>
+    <script>
+        document.getElementById('encryptBtn').addEventListener('click', () => {
+            const input = document.getElementById('inputBox').value;
+            const mode = document.getElementById('cipherMode').value;
+            let output = "";
+
+            try {
+                if(mode === 'rot13') {
+                    output = input.replace(/[a-zA-Z]/g, c => String.fromCharCode((c <= 'Z' ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26));
+                } else if (mode === 'base64') {
+                    output = btoa(input); // Encode
+                }
+            } catch(e) { output = "ERROR: Invalid Input for Cipher."; }
+            
+            document.getElementById('outputBox').value = output;
+        });
+    </script>
+</body>
+</html>
