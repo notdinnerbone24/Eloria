@@ -1,1 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Module: Oscilloscope</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .back-btn { align-self: flex-start; text-decoration: none; color: #e3b341; font-family: 'Fira Code', monospace; border: 1px solid #e3b341; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: rgba(227, 179, 65, 0.1); }
+        .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; max-width: 800px; width: 100%; text-align: center; }
+        canvas { background: #050505; border: 1px solid #30363d; border-radius: 4px; width: 100%; height: 300px; margin-bottom: 20px;}
+        .controls { display: flex; gap: 20px; justify-content: center; font-family: 'Fira Code', monospace; }
+        button { background: #e3b341; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 4px;}
+        input[type="range"] { accent-color: #e3b341; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">< Return to System</a>
+    <div class="panel">
+        <h1 style="font-family: 'Fira Code'; color: #e3b341; margin-top:0;">Oscilloscope</h1>
+        <canvas id="oscCanvas"></canvas>
+        <div class="controls">
+            <button id="toggleBtn">Start Oscillator</button>
+            <label>Freq: <input type="range" id="freqSlider" min="50" max="1000" value="440"></label>
+            <select id="typeSelect" style="background:#0d1117; color:#e3b341; border:1px solid #30363d;">
+                <option value="sine">Sine</option>
+                <option value="square">Square</option>
+                <option value="sawtooth">Sawtooth</option>
+            </select>
+        </div>
+    </div>
+    <script src="audio.js"></script>
+    <script>
+        const canvas = document.getElementById('oscCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 800; canvas.height = 300;
+
+        let audioCtx, analyser, osc, gainNode, isPlaying = false;
+
+        document.getElementById('toggleBtn').addEventListener('click', (e) => {
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 2048;
+                gainNode = audioCtx.createGain();
+                gainNode.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                drawWaveform();
+            }
+
+            if(isPlaying) {
+                osc.stop(); isPlaying = false; e.target.innerText = "Start Oscillator";
+            } else {
+                osc = audioCtx.createOscillator();
+                osc.type = document.getElementById('typeSelect').value;
+                osc.frequency.value = document.getElementById('freqSlider').value;
+                gainNode.gain.value = 0.1;
+                osc.connect(gainNode);
+                osc.start();
+                isPlaying = true; e.target.innerText = "Stop Oscillator";
+            }
+        });
+
+        document.getElementById('freqSlider').addEventListener('input', (e) => { if(osc) osc.frequency.value = e.target.value; });
+        document.getElementById('typeSelect').addEventListener('change', (e) => { if(osc) osc.type = e.target.value; });
+
+        function drawWaveform() {
+            requestAnimationFrame(drawWaveform);
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+
+            ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 2; ctx.strokeStyle = '#e3b341'; ctx.beginPath();
+
+            const sliceWidth = canvas.width * 1.0 / bufferLength;
+            let x = 0;
+            for(let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0; const y = v * canvas.height / 2;
+                if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            ctx.lineTo(canvas.width, canvas.height / 2); ctx.stroke();
+        }
+    </script>
+</body>
+</html>
 
