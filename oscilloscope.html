@@ -1,89 +1,1967 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Module: Oscilloscope</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .back-btn { align-self: flex-start; text-decoration: none; color: #e3b341; font-family: 'Fira Code', monospace; border: 1px solid #e3b341; padding: 8px 16px; border-radius: 4px; transition: 0.2s; margin-bottom: 20px; }
-        .back-btn:hover { background: rgba(227, 179, 65, 0.1); }
-        .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; max-width: 800px; width: 100%; text-align: center; }
-        canvas { background: #050505; border: 1px solid #30363d; border-radius: 4px; width: 100%; height: 300px; margin-bottom: 20px;}
-        .controls { display: flex; gap: 20px; justify-content: center; font-family: 'Fira Code', monospace; }
-        button { background: #e3b341; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 4px;}
-        input[type="range"] { accent-color: #e3b341; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Module: Oscilloscope</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-dark: #0a0e13;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #e3b341;
+    --green: #56d364;
+    --red: #f85149;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 20px;
+
+    background:
+        radial-gradient(
+            circle at 50% -20%,
+            rgba(227,179,65,.09),
+            transparent 45%
+        ),
+        var(--bg);
+
+    color: var(--text);
+    font-family: Inter, sans-serif;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.back-btn {
+    align-self: flex-start;
+
+    color: var(--accent);
+    text-decoration: none;
+
+    font-family: 'Fira Code', monospace;
+
+    border: 1px solid var(--accent);
+    padding: 8px 15px;
+    border-radius: 5px;
+
+    transition: .2s;
+}
+
+.back-btn:hover {
+    background: rgba(227,179,65,.1);
+}
+
+/* PANEL */
+
+.panel {
+    width: min(1100px, 100%);
+    margin-top: 18px;
+
+    background: rgba(22,27,34,.96);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    padding: 22px;
+
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.4);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 18px;
+}
+
+.title {
+    margin: 0;
+
+    color: var(--accent);
+    font-family: 'Fira Code', monospace;
+    font-size: 25px;
+}
+
+.subtitle {
+    margin: 5px 0 0;
+
+    color: var(--muted);
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+    background: #555;
+}
+
+.status-dot.active {
+    background: var(--green);
+
+    box-shadow:
+        0 0 12px rgba(86,211,100,.8);
+}
+
+/* SCOPE */
+
+.scope {
+    position: relative;
+
+    width: 100%;
+    height: 440px;
+
+    overflow: hidden;
+
+    background: #020406;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.readout {
+    position: absolute;
+
+    top: 12px;
+    left: 14px;
+
+    padding: 8px 10px;
+
+    background: rgba(0,0,0,.72);
+
+    border: 1px solid rgba(227,179,65,.25);
+    border-radius: 4px;
+
+    color: var(--accent);
+
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+
+    pointer-events: none;
+}
+
+.measurements {
+    position: absolute;
+
+    right: 14px;
+    top: 12px;
+
+    padding: 8px 10px;
+
+    background: rgba(0,0,0,.72);
+
+    border: 1px solid rgba(227,179,65,.25);
+    border-radius: 4px;
+
+    color: var(--muted);
+
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+
+    line-height: 1.7;
+}
+
+.measurements span {
+    color: var(--accent);
+}
+
+/* CONTROLS */
+
+.controls {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+
+    margin-top: 15px;
+}
+
+.control {
+    background: var(--panel-dark);
+
+    border: 1px solid var(--border);
+    border-radius: 5px;
+
+    padding: 12px;
+}
+
+.control label {
+    display: flex;
+    justify-content: space-between;
+
+    margin-bottom: 8px;
+
+    color: var(--muted);
+
+    font-family: 'Fira Code', monospace;
+    font-size: 10px;
+
+    text-transform: uppercase;
+}
+
+.value {
+    color: var(--accent);
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+select {
+    width: 100%;
+
+    padding: 7px;
+
+    background: #0d1117;
+    color: var(--accent);
+
+    border: 1px solid var(--border);
+    border-radius: 4px;
+
+    font-family: 'Fira Code', monospace;
+}
+
+/* ACTION BAR */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-top: 12px;
+}
+
+button {
+    padding: 10px 15px;
+
+    background: var(--accent);
+    color: #000;
+
+    border: none;
+    border-radius: 4px;
+
+    font-family: 'Fira Code', monospace;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .15s;
+}
+
+button:hover {
+    filter: brightness(1.1);
+}
+
+button.secondary {
+    background: #30363d;
+    color: var(--text);
+}
+
+button.active {
+    background: var(--green);
+}
+
+button.danger {
+    background: var(--red);
+    color: white;
+}
+
+.hint {
+    margin-left: auto;
+
+    align-self: center;
+
+    color: var(--muted);
+
+    font-family: 'Fira Code', monospace;
+    font-size: 10px;
+}
+
+/* MOBILE */
+
+@media(max-width: 800px) {
+
+    .controls {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .scope {
+        height: 350px;
+    }
+}
+
+@media(max-width: 500px) {
+
+    body {
+        padding: 10px;
+    }
+
+    .panel {
+        padding: 13px;
+    }
+
+    .header {
+        align-items: flex-start;
+    }
+
+    .title {
+        font-size: 20px;
+    }
+
+    .scope {
+        height: 300px;
+    }
+
+    .measurements {
+        display: none;
+    }
+
+    .controls {
+        grid-template-columns: 1fr;
+    }
+
+    .hint {
+        width: 100%;
+        margin-left: 0;
+        text-align: center;
+    }
+}
+</style>
 </head>
+
 <body>
-    <a href="index.html" class="back-btn">< Return to System</a>
-    <div class="panel">
-        <h1 style="font-family: 'Fira Code'; color: #e3b341; margin-top:0;">Oscilloscope</h1>
-        <canvas id="oscCanvas"></canvas>
-        <div class="controls">
-            <button id="toggleBtn">Start Oscillator</button>
-            <label>Freq: <input type="range" id="freqSlider" min="50" max="1000" value="440"></label>
-            <select id="typeSelect" style="background:#0d1117; color:#e3b341; border:1px solid #30363d;">
-                <option value="sine">Sine</option>
-                <option value="square">Square</option>
-                <option value="sawtooth">Sawtooth</option>
-            </select>
+
+<a href="index.html" class="back-btn">
+    &lt; Return to System
+</a>
+
+<div class="panel">
+
+    <div class="header">
+
+        <div>
+            <h1 class="title">OSCILLOSCOPE</h1>
+
+            <p class="subtitle">
+                AUDIO SIGNAL ANALYZER // CH-01
+            </p>
         </div>
+
+        <div class="status">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="statusText">STANDBY</span>
+        </div>
+
     </div>
-    <script src="audio.js"></script>
-    <script>
-        const canvas = document.getElementById('oscCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 800; canvas.height = 300;
 
-        let audioCtx, analyser, osc, gainNode, isPlaying = false;
 
-        document.getElementById('toggleBtn').addEventListener('click', (e) => {
-            if(!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 2048;
-                gainNode = audioCtx.createGain();
-                gainNode.connect(analyser);
-                analyser.connect(audioCtx.destination);
-                drawWaveform();
-            }
+    <!-- OSCILLOSCOPE -->
 
-            if(isPlaying) {
-                osc.stop(); isPlaying = false; e.target.innerText = "Start Oscillator";
-            } else {
-                osc = audioCtx.createOscillator();
-                osc.type = document.getElementById('typeSelect').value;
-                osc.frequency.value = document.getElementById('freqSlider').value;
-                gainNode.gain.value = 0.1;
-                osc.connect(gainNode);
-                osc.start();
-                isPlaying = true; e.target.innerText = "Stop Oscillator";
-            }
-        });
+    <div class="scope">
 
-        document.getElementById('freqSlider').addEventListener('input', (e) => { if(osc) osc.frequency.value = e.target.value; });
-        document.getElementById('typeSelect').addEventListener('change', (e) => { if(osc) osc.type = e.target.value; });
+        <canvas id="oscCanvas"></canvas>
 
-        function drawWaveform() {
-            requestAnimationFrame(drawWaveform);
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            analyser.getByteTimeDomainData(dataArray);
+        <div class="readout">
+            FREQ:
+            <span id="readoutFreq">440</span> Hz
+            &nbsp; | &nbsp;
+            AMP:
+            <span id="readoutAmp">50</span>%
+        </div>
 
-            ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.lineWidth = 2; ctx.strokeStyle = '#e3b341'; ctx.beginPath();
+        <div class="measurements">
 
-            const sliceWidth = canvas.width * 1.0 / bufferLength;
-            let x = 0;
-            for(let i = 0; i < bufferLength; i++) {
-                const v = dataArray[i] / 128.0; const y = v * canvas.height / 2;
-                if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                x += sliceWidth;
-            }
-            ctx.lineTo(canvas.width, canvas.height / 2); ctx.stroke();
+            RMS:
+            <span id="rmsReadout">0.00</span>
+
+            <br>
+
+            PEAK:
+            <span id="peakReadout">0.00</span>
+
+            <br>
+
+            MEASURED:
+            <span id="measuredFreq">---</span>
+
+        </div>
+
+    </div>
+
+
+    <!-- CONTROLS -->
+
+    <div class="controls">
+
+        <!-- FREQUENCY -->
+
+        <div class="control">
+
+            <label>
+                <span>Frequency</span>
+
+                <span
+                    class="value"
+                    id="freqValue"
+                >
+                    440 Hz
+                </span>
+            </label>
+
+            <input
+                id="freqSlider"
+                type="range"
+                min="20"
+                max="2000"
+                value="440"
+            >
+
+        </div>
+
+
+        <!-- AMPLITUDE -->
+
+        <div class="control">
+
+            <label>
+
+                <span>Amplitude</span>
+
+                <span
+                    class="value"
+                    id="ampValue"
+                >
+                    50%
+                </span>
+
+            </label>
+
+            <input
+                id="ampSlider"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.5"
+            >
+
+        </div>
+
+
+        <!-- WAVEFORM -->
+
+        <div class="control">
+
+            <label>
+                <span>Waveform</span>
+            </label>
+
+            <select id="typeSelect">
+
+                <option value="sine">
+                    Sine
+                </option>
+
+                <option value="square">
+                    Square
+                </option>
+
+                <option value="sawtooth">
+                    Sawtooth
+                </option>
+
+                <option value="triangle">
+                    Triangle
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- OUTPUT -->
+
+        <div class="control">
+
+            <label>
+
+                <span>Output</span>
+
+                <span
+                    class="value"
+                    id="gainValue"
+                >
+                    10%
+                </span>
+
+            </label>
+
+            <input
+                id="gainSlider"
+                type="range"
+                min="0"
+                max="0.3"
+                step="0.01"
+                value="0.1"
+            >
+
+        </div>
+
+
+        <!-- TIME/DIV -->
+
+        <div class="control">
+
+            <label>
+
+                <span>Time / Div</span>
+
+                <span
+                    class="value"
+                    id="timeValue"
+                >
+                    5 ms
+                </span>
+
+            </label>
+
+            <input
+                id="timeSlider"
+                type="range"
+                min="0"
+                max="6"
+                step="1"
+                value="2"
+            >
+
+        </div>
+
+
+        <!-- VOLTS/DIV -->
+
+        <div class="control">
+
+            <label>
+
+                <span>Volts / Div</span>
+
+                <span
+                    class="value"
+                    id="voltValue"
+                >
+                    1.0
+                </span>
+
+            </label>
+
+            <input
+                id="voltSlider"
+                type="range"
+                min="0.1"
+                max="2"
+                step="0.1"
+                value="1"
+            >
+
+        </div>
+
+
+        <!-- TRIGGER -->
+
+        <div class="control">
+
+            <label>
+
+                <span>Trigger</span>
+
+                <span
+                    class="value"
+                    id="triggerValue"
+                >
+                    50%
+                </span>
+
+            </label>
+
+            <input
+                id="triggerSlider"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.5"
+            >
+
+        </div>
+
+
+        <!-- DISPLAY MODE -->
+
+        <div class="control">
+
+            <label>
+                <span>Display</span>
+            </label>
+
+            <select id="displayMode">
+
+                <option value="wave">
+                    Waveform
+                </option>
+
+                <option value="spectrum">
+                    FFT Spectrum
+                </option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+
+    <!-- ACTIONS -->
+
+    <div class="actions">
+
+        <button id="toggleBtn">
+            ▶ START
+        </button>
+
+        <button
+            id="pauseBtn"
+            class="secondary"
+        >
+            ❚❚ FREEZE
+        </button>
+
+        <button
+            id="resetBtn"
+            class="secondary"
+        >
+            ↻ RESET
+        </button>
+
+        <span class="hint">
+            WEB AUDIO ENGINE // DIGITAL SCOPE
+        </span>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* ==================================================
+   ELEMENTS
+================================================== */
+
+const canvas =
+    document.getElementById("oscCanvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const toggleBtn =
+    document.getElementById("toggleBtn");
+
+const pauseBtn =
+    document.getElementById("pauseBtn");
+
+const resetBtn =
+    document.getElementById("resetBtn");
+
+const freqSlider =
+    document.getElementById("freqSlider");
+
+const ampSlider =
+    document.getElementById("ampSlider");
+
+const gainSlider =
+    document.getElementById("gainSlider");
+
+const timeSlider =
+    document.getElementById("timeSlider");
+
+const voltSlider =
+    document.getElementById("voltSlider");
+
+const triggerSlider =
+    document.getElementById("triggerSlider");
+
+const typeSelect =
+    document.getElementById("typeSelect");
+
+const displayMode =
+    document.getElementById("displayMode");
+
+
+/* ==================================================
+   STATE
+================================================== */
+
+let audioCtx = null;
+let analyser = null;
+let osc = null;
+let gainNode = null;
+
+let isPlaying = false;
+let frozen = false;
+
+
+/* ==================================================
+   TIME/DIV SETTINGS
+================================================== */
+
+const timeOptions = [
+    1,
+    2,
+    5,
+    10,
+    20,
+    50,
+    100
+];
+
+
+/* ==================================================
+   CANVAS
+================================================== */
+
+function resizeCanvas() {
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    const dpr =
+        window.devicePixelRatio || 1;
+
+    canvas.width =
+        rect.width * dpr;
+
+    canvas.height =
+        rect.height * dpr;
+
+    ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+    );
+}
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
+
+resizeCanvas();
+
+
+/* ==================================================
+   AUDIO INITIALIZATION
+================================================== */
+
+function initializeAudio() {
+
+    audioCtx = new (
+        window.AudioContext ||
+        window.webkitAudioContext
+    )();
+
+    analyser =
+        audioCtx.createAnalyser();
+
+    /*
+       Large FFT gives us enough samples
+       for waveform + frequency analysis.
+    */
+
+    analyser.fftSize = 4096;
+
+    analyser.smoothingTimeConstant = 0.15;
+
+    gainNode =
+        audioCtx.createGain();
+
+    /*
+       OUTPUT gain
+    */
+
+    gainNode.gain.value =
+        Number(gainSlider.value);
+
+    gainNode.connect(analyser);
+
+    analyser.connect(
+        audioCtx.destination
+    );
+
+    draw();
+}
+
+
+/* ==================================================
+   START
+================================================== */
+
+function startOscillator() {
+
+    if (!audioCtx) {
+
+        initializeAudio();
+
+    }
+
+    if (
+        audioCtx.state === "suspended"
+    ) {
+
+        audioCtx.resume();
+
+    }
+
+    osc =
+        audioCtx.createOscillator();
+
+    osc.type =
+        typeSelect.value;
+
+    osc.frequency.value =
+        Number(freqSlider.value);
+
+    /*
+       IMPORTANT:
+       Amplitude now controls the oscillator
+       gain as well as the graph.
+    */
+
+    osc.connect(gainNode);
+
+    osc.start();
+
+    isPlaying = true;
+
+    updateStatus();
+}
+
+
+/* ==================================================
+   STOP
+================================================== */
+
+function stopOscillator() {
+
+    if (!osc) return;
+
+    try {
+        osc.stop();
+    } catch (error) {}
+
+    osc.disconnect();
+
+    osc = null;
+
+    isPlaying = false;
+
+    updateStatus();
+}
+
+
+/* ==================================================
+   STATUS
+================================================== */
+
+function updateStatus() {
+
+    const dot =
+        document.getElementById(
+            "statusDot"
+        );
+
+    const text =
+        document.getElementById(
+            "statusText"
+        );
+
+    if (isPlaying) {
+
+        toggleBtn.textContent =
+            "■ STOP";
+
+        dot.classList.add("active");
+
+        text.textContent =
+            "SIGNAL ACTIVE";
+
+    } else {
+
+        toggleBtn.textContent =
+            "▶ START";
+
+        dot.classList.remove("active");
+
+        text.textContent =
+            "STANDBY";
+    }
+}
+
+
+/* ==================================================
+   START / STOP BUTTON
+================================================== */
+
+toggleBtn.addEventListener(
+    "click",
+    () => {
+
+        if (isPlaying) {
+
+            stopOscillator();
+
+        } else {
+
+            startOscillator();
+
         }
-    </script>
+
+    }
+);
+
+
+/* ==================================================
+   FREQUENCY
+================================================== */
+
+freqSlider.addEventListener(
+    "input",
+    () => {
+
+        const value =
+            Number(freqSlider.value);
+
+        document.getElementById(
+            "freqValue"
+        ).textContent =
+            `${value} Hz`;
+
+        document.getElementById(
+            "readoutFreq"
+        ).textContent =
+            value;
+
+        if (osc && audioCtx) {
+
+            osc.frequency.setTargetAtTime(
+                value,
+                audioCtx.currentTime,
+                0.008
+            );
+
+        }
+
+    }
+);
+
+
+/* ==================================================
+   AMPLITUDE
+================================================== */
+
+ampSlider.addEventListener(
+    "input",
+    () => {
+
+        const value =
+            Number(ampSlider.value);
+
+        /*
+           UI
+        */
+
+        document.getElementById(
+            "ampValue"
+        ).textContent =
+            `${Math.round(value * 100)}%`;
+
+        document.getElementById(
+            "readoutAmp"
+        ).textContent =
+            Math.round(value * 100);
+
+        /*
+           ACTUAL SOUND AMPLITUDE
+
+           The oscillator is connected directly
+           to gainNode, so we create an additional
+           amplitude gain stage here.
+        */
+
+        updateAmplitude();
+
+    }
+);
+
+
+/*
+   Separate amplitude node
+*/
+
+let amplitudeNode = null;
+
+
+/* Rebuild audio chain with amplitude control */
+
+function createAmplitudeChain() {
+
+    amplitudeNode =
+        audioCtx.createGain();
+
+    amplitudeNode.gain.value =
+        Number(ampSlider.value);
+
+    amplitudeNode.connect(
+        analyser
+    );
+
+    analyser.connect(
+        audioCtx.destination
+    );
+}
+
+
+/*
+   We use a clean chain:
+   oscillator
+       ↓
+   amplitude
+       ↓
+   output
+       ↓
+   analyser
+*/
+
+function updateAmplitude() {
+
+    if (!audioCtx) return;
+
+    if (!amplitudeNode) {
+
+        /*
+           For an already-created analyser chain,
+           don't duplicate the destination.
+        */
+
+        return;
+    }
+
+    amplitudeNode.gain.setTargetAtTime(
+        Number(ampSlider.value),
+        audioCtx.currentTime,
+        0.01
+    );
+}
+
+
+/* ==================================================
+   OUTPUT GAIN
+================================================== */
+
+gainSlider.addEventListener(
+    "input",
+    () => {
+
+        const value =
+            Number(gainSlider.value);
+
+        document.getElementById(
+            "gainValue"
+        ).textContent =
+            `${Math.round(value * 100)}%`;
+
+        if (gainNode && audioCtx) {
+
+            gainNode.gain.setTargetAtTime(
+                value,
+                audioCtx.currentTime,
+                0.01
+            );
+
+        }
+
+    }
+);
+
+
+/* ==================================================
+   WAVEFORM
+================================================== */
+
+typeSelect.addEventListener(
+    "change",
+    () => {
+
+        if (osc) {
+
+            osc.type =
+                typeSelect.value;
+
+        }
+
+    }
+);
+
+
+/* ==================================================
+   TIME / DIV
+================================================== */
+
+timeSlider.addEventListener(
+    "input",
+    () => {
+
+        const index =
+            Number(timeSlider.value);
+
+        const value =
+            timeOptions[index];
+
+        document.getElementById(
+            "timeValue"
+        ).textContent =
+            `${value} ms`;
+
+    }
+);
+
+
+/* ==================================================
+   VOLTS / DIV
+================================================== */
+
+voltSlider.addEventListener(
+    "input",
+    () => {
+
+        const value =
+            Number(voltSlider.value);
+
+        document.getElementById(
+            "voltValue"
+        ).textContent =
+            value.toFixed(1);
+
+    }
+);
+
+
+/* ==================================================
+   TRIGGER
+================================================== */
+
+triggerSlider.addEventListener(
+    "input",
+    () => {
+
+        const value =
+            Number(triggerSlider.value);
+
+        document.getElementById(
+            "triggerValue"
+        ).textContent =
+            `${Math.round(value * 100)}%`;
+
+    }
+);
+
+
+/* ==================================================
+   FREEZE
+================================================== */
+
+pauseBtn.addEventListener(
+    "click",
+    () => {
+
+        frozen =
+            !frozen;
+
+        pauseBtn.classList.toggle(
+            "active",
+            frozen
+        );
+
+        pauseBtn.textContent =
+            frozen
+                ? "▶ RESUME"
+                : "❚❚ FREEZE";
+
+    }
+);
+
+
+/* ==================================================
+   RESET
+================================================== */
+
+resetBtn.addEventListener(
+    "click",
+    () => {
+
+        freqSlider.value = 440;
+
+        ampSlider.value = 0.5;
+
+        gainSlider.value = 0.1;
+
+        timeSlider.value = 2;
+
+        voltSlider.value = 1;
+
+        triggerSlider.value = 0.5;
+
+        typeSelect.value = "sine";
+
+        displayMode.value = "wave";
+
+        updateAllLabels();
+
+        if (osc && audioCtx) {
+
+            osc.frequency.value = 440;
+
+            osc.type = "sine";
+
+        }
+
+        if (gainNode && audioCtx) {
+
+            gainNode.gain.value = 0.1;
+
+        }
+
+    }
+);
+
+
+/* ==================================================
+   GRID
+================================================== */
+
+function drawGrid(width, height) {
+
+    ctx.save();
+
+    const vertical =
+        10;
+
+    const horizontal =
+        8;
+
+
+    /*
+       Major grid
+    */
+
+    ctx.lineWidth = 1;
+
+    ctx.strokeStyle =
+        "rgba(227,179,65,.13)";
+
+    for (
+        let i = 0;
+        i <= vertical;
+        i++
+    ) {
+
+        const x =
+            width * i / vertical;
+
+        ctx.beginPath();
+
+        ctx.moveTo(x, 0);
+
+        ctx.lineTo(
+            x,
+            height
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    for (
+        let i = 0;
+        i <= horizontal;
+        i++
+    ) {
+
+        const y =
+            height * i / horizontal;
+
+        ctx.beginPath();
+
+        ctx.moveTo(0, y);
+
+        ctx.lineTo(
+            width,
+            y
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    /*
+       Center lines
+    */
+
+    ctx.strokeStyle =
+        "rgba(227,179,65,.4)";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        width / 2,
+        0
+    );
+
+    ctx.lineTo(
+        width / 2,
+        height
+    );
+
+    ctx.stroke();
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        0,
+        height / 2
+    );
+
+    ctx.lineTo(
+        width,
+        height / 2
+    );
+
+    ctx.stroke();
+
+
+    /*
+       Tick marks
+    */
+
+    ctx.fillStyle =
+        "rgba(227,179,65,.5)";
+
+    for (
+        let i = 0;
+        i < vertical;
+        i++
+    ) {
+
+        for (
+            let j = 1;
+            j < 5;
+            j++
+        ) {
+
+            const x =
+                width * (
+                    i + j / 5
+                ) / vertical;
+
+            ctx.fillRect(
+                x,
+                height / 2 - 2,
+                1,
+                4
+            );
+
+        }
+
+    }
+
+
+    /*
+       Axis labels
+    */
+
+    ctx.font =
+        "10px Fira Code";
+
+    ctx.fillStyle =
+        "rgba(201,209,217,.45)";
+
+    ctx.fillText(
+        "0",
+        6,
+        height / 2 - 6
+    );
+
+    ctx.fillText(
+        "+V",
+        6,
+        15
+    );
+
+    ctx.fillText(
+        "-V",
+        6,
+        height - 6
+    );
+
+    ctx.restore();
+}
+
+
+/* ==================================================
+   TRIGGER FINDER
+================================================== */
+
+function findTrigger(data) {
+
+    const trigger =
+        Number(triggerSlider.value);
+
+    const target =
+        128 +
+        (trigger - 0.5) * 255;
+
+    for (
+        let i = 1;
+        i < data.length;
+        i++
+    ) {
+
+        if (
+            data[i - 1] < target &&
+            data[i] >= target
+        ) {
+
+            return i;
+
+        }
+
+    }
+
+    return 0;
+}
+
+
+/* ==================================================
+   WAVEFORM DRAW
+================================================== */
+
+function drawWaveform(
+    width,
+    height
+) {
+
+    const buffer =
+        new Uint8Array(
+            analyser.fftSize
+        );
+
+    analyser.getByteTimeDomainData(
+        buffer
+    );
+
+    const start =
+        findTrigger(buffer);
+
+    const amplitude =
+        Number(ampSlider.value);
+
+    /*
+       Volts/div scaling
+    */
+
+    const volts =
+        Number(voltSlider.value);
+
+    const verticalScale =
+        amplitude / volts;
+
+    const visible =
+        Math.min(
+            buffer.length - start,
+            Math.floor(
+                buffer.length * .75
+            )
+        );
+
+    ctx.beginPath();
+
+    for (
+        let i = 0;
+        i < visible;
+        i++
+    ) {
+
+        const index =
+            start + i;
+
+        const normalized =
+            (buffer[index] - 128) / 128;
+
+        const y =
+            height / 2 -
+            normalized *
+            height *
+            .42 *
+            verticalScale;
+
+        const x =
+            i /
+            visible *
+            width;
+
+        if (i === 0) {
+
+            ctx.moveTo(
+                x,
+                y
+            );
+
+        } else {
+
+            ctx.lineTo(
+                x,
+                y
+            );
+
+        }
+
+    }
+
+
+    /*
+       Glow
+    */
+
+    ctx.save();
+
+    ctx.lineWidth = 6;
+
+    ctx.strokeStyle =
+        "rgba(227,179,65,.08)";
+
+    ctx.stroke();
+
+
+    /*
+       Main trace
+    */
+
+    ctx.lineWidth = 2;
+
+    ctx.strokeStyle =
+        "#e3b341";
+
+    ctx.shadowBlur = 8;
+
+    ctx.shadowColor =
+        "rgba(227,179,65,.65)";
+
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+
+/* ==================================================
+   FFT SPECTRUM
+================================================== */
+
+function drawSpectrum(
+    width,
+    height
+) {
+
+    const buffer =
+        new Uint8Array(
+            analyser.frequencyBinCount
+        );
+
+    analyser.getByteFrequencyData(
+        buffer
+    );
+
+    ctx.beginPath();
+
+    const barWidth =
+        width /
+        buffer.length *
+        2;
+
+    for (
+        let i = 0;
+        i < buffer.length;
+        i++
+    ) {
+
+        const magnitude =
+            buffer[i] / 255;
+
+        const barHeight =
+            magnitude * height;
+
+        const x =
+            i * barWidth;
+
+        ctx.fillStyle =
+            `rgba(227,179,65,${0.15 + magnitude * .8})`;
+
+        ctx.fillRect(
+            x,
+            height - barHeight,
+            Math.max(1, barWidth - 1),
+            barHeight
+        );
+
+    }
+}
+
+
+/* ==================================================
+   MEASUREMENTS
+================================================== */
+
+function calculateMeasurements() {
+
+    if (!analyser) return;
+
+    const data =
+        new Uint8Array(
+            analyser.fftSize
+        );
+
+    analyser.getByteTimeDomainData(
+        data
+    );
+
+    let sum = 0;
+
+    let peak = 0;
+
+    for (
+        let i = 0;
+        i < data.length;
+        i++
+    ) {
+
+        const value =
+            (data[i] - 128) / 128;
+
+        sum += value * value;
+
+        peak =
+            Math.max(
+                peak,
+                Math.abs(value)
+            );
+
+    }
+
+    const rms =
+        Math.sqrt(
+            sum / data.length
+        );
+
+    document.getElementById(
+        "rmsReadout"
+    ).textContent =
+        rms.toFixed(3);
+
+    document.getElementById(
+        "peakReadout"
+    ).textContent =
+        peak.toFixed(3);
+
+
+    /*
+       Estimate dominant frequency
+       from the FFT.
+    */
+
+    const spectrum =
+        new Uint8Array(
+            analyser.frequencyBinCount
+        );
+
+    analyser.getByteFrequencyData(
+        spectrum
+    );
+
+    let max = 0;
+
+    let maxIndex = 0;
+
+    for (
+        let i = 1;
+        i < spectrum.length;
+        i++
+    ) {
+
+        if (
+            spectrum[i] > max
+        ) {
+
+            max =
+                spectrum[i];
+
+            maxIndex =
+                i;
+
+        }
+
+    }
+
+    if (max > 5) {
+
+        const frequency =
+            maxIndex *
+            audioCtx.sampleRate /
+            analyser.fftSize;
+
+        document.getElementById(
+            "measuredFreq"
+        ).textContent =
+            `${frequency.toFixed(1)} Hz`;
+
+    } else {
+
+        document.getElementById(
+            "measuredFreq"
+        ).textContent =
+            "---";
+
+    }
+}
+
+
+/* ==================================================
+   DRAW LOOP
+================================================== */
+
+function draw() {
+
+    requestAnimationFrame(draw);
+
+    if (!analyser) return;
+
+    if (frozen) return;
+
+    const width =
+        canvas.clientWidth;
+
+    const height =
+        canvas.clientHeight;
+
+
+    /*
+       Background
+    */
+
+    ctx.fillStyle =
+        "#020406";
+
+    ctx.fillRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    /*
+       Grid
+    */
+
+    drawGrid(
+        width,
+        height
+    );
+
+
+    /*
+       Signal
+    */
+
+    if (isPlaying) {
+
+        if (
+            displayMode.value ===
+            "spectrum"
+        ) {
+
+            drawSpectrum(
+                width,
+                height
+            );
+
+        } else {
+
+            drawWaveform(
+                width,
+                height
+            );
+
+        }
+
+        calculateMeasurements();
+
+    } else {
+
+        /*
+           Standby line
+        */
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            0,
+            height / 2
+        );
+
+        ctx.lineTo(
+            width,
+            height / 2
+        );
+
+        ctx.strokeStyle =
+            "rgba(227,179,65,.35)";
+
+        ctx.lineWidth = 1;
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* ==================================================
+   LABEL UPDATE
+================================================== */
+
+function updateAllLabels() {
+
+    const frequency =
+        Number(freqSlider.value);
+
+    const amplitude =
+        Number(ampSlider.value);
+
+    const gain =
+        Number(gainSlider.value);
+
+    const time =
+        timeOptions[
+            Number(timeSlider.value)
+        ];
+
+    const volts =
+        Number(voltSlider.value);
+
+    const trigger =
+        Number(triggerSlider.value);
+
+
+    document.getElementById(
+        "freqValue"
+    ).textContent =
+        `${frequency} Hz`;
+
+    document.getElementById(
+        "ampValue"
+    ).textContent =
+        `${Math.round(amplitude * 100)}%`;
+
+    document.getElementById(
+        "gainValue"
+    ).textContent =
+        `${Math.round(gain * 100)}%`;
+
+    document.getElementById(
+        "timeValue"
+    ).textContent =
+        `${time} ms`;
+
+    document.getElementById(
+        "voltValue"
+    ).textContent =
+        volts.toFixed(1);
+
+    document.getElementById(
+        "triggerValue"
+    ).textContent =
+        `${Math.round(trigger * 100)}%`;
+
+    document.getElementById(
+        "readoutFreq"
+    ).textContent =
+        frequency;
+
+    document.getElementById(
+        "readoutAmp"
+    ).textContent =
+        Math.round(
+            amplitude * 100
+        );
+}
+
+
+updateAllLabels();
+
+updateStatus();
+
+</script>
+
 </body>
 </html>
-
