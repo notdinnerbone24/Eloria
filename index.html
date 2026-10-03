@@ -6,7 +6,7 @@
     <title>Eloria | Terminal OS</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Real-time HUD for Boid Parameters */
+        /* Real-time HUD for Randomized Boid Swarm Parameters */
         #boid-hud {
             position: absolute;
             top: 20px; left: 20px;
@@ -14,14 +14,16 @@
             background: rgba(13, 17, 23, 0.85);
             border: 1px solid #3fb950;
             border-radius: 6px;
-            padding: 15px;
+            padding: 14px 18px;
             font-family: 'Fira Code', monospace;
             font-size: 12px;
             color: #3fb950;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
             pointer-events: none;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
         }
         .hud-val { color: #58a6ff; font-weight: bold; }
+        .hud-mode { color: #e3b341; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -31,6 +33,7 @@
         <!-- Live Parameter HUD -->
         <div id="boid-hud">
             <div>// SWARM_DYNAMICS_ENGINE</div>
+            <div>PHASE_MODE : <span id="hud-mode" class="hud-mode">INITIALIZING</span></div>
             <div>SEPARATION : <span id="hud-sep" class="hud-val">0.00</span></div>
             <div>COHESION   : <span id="hud-coh" class="hud-val">0.00</span></div>
             <div>ALIGNMENT  : <span id="hud-ali" class="hud-val">0.00</span></div>
@@ -49,6 +52,7 @@
 
     <div id="modules-screen" class="screen">
         <div class="container">
+            <!-- Floating Icon Category Router -->
             <nav class="system-nav">
                 <button class="nav-btn active" data-filter="all">
                     <span class="icon">💠</span><span class="tooltip">ALL_MODULES</span>
@@ -210,9 +214,10 @@
             });
         });
 
-        // --- DYNAMIC BOIDS ENGINE ---
+        // --- RANDOMIZED MUTATING BOIDS ENGINE ---
         const canvas = document.getElementById('boids-bg');
         const ctx = canvas.getContext('2d');
+        const hudMode = document.getElementById('hud-mode');
         const hudSep = document.getElementById('hud-sep');
         const hudCoh = document.getElementById('hud-coh');
         const hudAli = document.getElementById('hud-ali');
@@ -225,7 +230,7 @@
         resizeCanvas();
 
         const boids = [];
-        const numBoids = window.innerWidth > 800 ? 120 : 60; 
+        const numBoids = window.innerWidth > 800 ? 110 : 55; 
         
         for (let i = 0; i < numBoids; i++) {
             boids.push({
@@ -236,43 +241,91 @@
             });
         }
 
-        const visualRange = 75;
-        const speedLimit = 4.5;
-        const minSpeed = 1.5;
+        // Active animated parameters
+        let currentSep = 0.03;
+        let currentCoh = 0.003;
+        let currentAli = 0.04;
+        let currentSpeedLimit = 4.2;
+        let currentVisualRange = 75;
+
+        // Target parameters to interpolate towards
+        let targetSep = 0.03;
+        let targetCoh = 0.003;
+        let targetAli = 0.04;
+        let targetSpeedLimit = 4.2;
+        let targetVisualRange = 75;
+
+        const phaseModes = [
+            { name: "TIGHT_SWARM", sep: 0.015, coh: 0.007, ali: 0.06, speed: 4.5, range: 90 },
+            { name: "SCATTER_BURST", sep: 0.075, coh: 0.0005, ali: 0.01, speed: 5.5, range: 50 },
+            { name: "SYNCHRONIZED_MIGRATION", sep: 0.02, coh: 0.004, ali: 0.09, speed: 4.0, range: 85 },
+            { name: "BROWNIAN_CHAOS", sep: 0.05, coh: 0.001, ali: 0.005, speed: 3.5, range: 40 },
+            { name: "VORTEX_DRIFT", sep: 0.03, coh: 0.005, ali: 0.045, speed: 4.8, range: 70 }
+        ];
+
+        function pickNewRandomCombination() {
+            // Either select a curated behavior archetype or synthesize entirely random values
+            if (Math.random() > 0.3) {
+                const preset = phaseModes[Math.floor(Math.random() * phaseModes.length)];
+                hudMode.innerText = preset.name;
+                targetSep = preset.sep;
+                targetCoh = preset.coh;
+                targetAli = preset.ali;
+                targetSpeedLimit = preset.speed;
+                targetVisualRange = preset.range;
+            } else {
+                hudMode.innerText = "MUTATING_HYBRID";
+                targetSep = 0.01 + Math.random() * 0.07;
+                targetCoh = 0.0005 + Math.random() * 0.007;
+                targetAli = 0.005 + Math.random() * 0.085;
+                targetSpeedLimit = 3.0 + Math.random() * 3.0;
+                targetVisualRange = 40 + Math.random() * 60;
+            }
+        }
+
+        // Trigger an initial profile, then smoothly swap combinations randomly every 4-7 seconds
+        pickNewRandomCombination();
+        function scheduleNextMutation() {
+            const nextInterval = 4000 + Math.random() * 3000;
+            setTimeout(() => {
+                pickNewRandomCombination();
+                scheduleNextMutation();
+            }, nextInterval);
+        }
+        scheduleNextMutation();
 
         function animateBg() {
             if (welcomeScreen.style.display === 'none') return;
             
-            // Draw fade trail
-            ctx.fillStyle = 'rgba(5, 5, 5, 0.3)';
+            // Motion blur trail
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.28)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Calculate dynamic, time-based parameters
-            const time = Date.now() * 0.0005; 
-            
-            // Parameters oscillate smoothly between defined minimum and maximum limits
-            const separationForce = 0.03 + (Math.sin(time * 0.8) * 0.02); // 0.01 to 0.05
-            const cohesionForce = 0.004 + (Math.cos(time * 0.5) * 0.003); // 0.001 to 0.007
-            const alignmentForce = 0.04 + (Math.sin(time * 1.2) * 0.03); // 0.01 to 0.07
+            // Smooth linear interpolation (lerp) toward target randomized combinations
+            currentSep += (targetSep - currentSep) * 0.02;
+            currentCoh += (targetCoh - currentCoh) * 0.02;
+            currentAli += (targetAli - currentAli) * 0.02;
+            currentSpeedLimit += (targetSpeedLimit - currentSpeedLimit) * 0.02;
+            currentVisualRange += (targetVisualRange - currentVisualRange) * 0.02;
 
-            // Update HUD text
-            hudSep.innerText = (separationForce * 100).toFixed(2);
-            hudCoh.innerText = (cohesionForce * 1000).toFixed(2);
-            hudAli.innerText = (alignmentForce * 100).toFixed(2);
+            // Update Live HUD Readout
+            hudSep.innerText = (currentSep * 100).toFixed(2);
+            hudCoh.innerText = (currentCoh * 1000).toFixed(2);
+            hudAli.innerText = (currentAli * 100).toFixed(2);
 
             for (let boid of boids) {
-                let dx = 0, dy = 0; // For Separation
-                let avgX = 0, avgY = 0; // For Cohesion
-                let avgVx = 0, avgVy = 0; // For Alignment
+                let dx = 0, dy = 0;
+                let avgX = 0, avgY = 0;
+                let avgVx = 0, avgVy = 0;
                 let neighbors = 0;
 
                 for (let other of boids) {
                     if (boid === other) continue;
                     let dist = Math.hypot(boid.x - other.x, boid.y - other.y);
                     
-                    if (dist < visualRange) {
-                        // Separation
-                        if (dist < 20) {
+                    if (dist < currentVisualRange) {
+                        // Separation zone
+                        if (dist < 22) {
                             dx += boid.x - other.x;
                             dy += boid.y - other.y;
                         }
@@ -292,40 +345,37 @@
                     avgVx /= neighbors;
                     avgVy /= neighbors;
 
-                    // Apply Cohesion
-                    boid.vx += (avgX - boid.x) * cohesionForce;
-                    boid.vy += (avgY - boid.y) * cohesionForce;
-                    
-                    // Apply Alignment
-                    boid.vx += (avgVx - boid.vx) * alignmentForce;
-                    boid.vy += (avgVy - boid.vy) * alignmentForce;
+                    boid.vx += (avgX - boid.x) * currentCoh;
+                    boid.vy += (avgY - boid.y) * currentCoh;
+                    boid.vx += (avgVx - boid.vx) * currentAli;
+                    boid.vy += (avgVy - boid.vy) * currentAli;
                 }
                 
-                // Apply Separation
-                boid.vx += dx * separationForce;
-                boid.vy += dy * separationForce;
+                boid.vx += dx * currentSep;
+                boid.vy += dy * currentSep;
 
-                // Speed regulation
+                // Regulate Min and Max Velocities
                 const speed = Math.hypot(boid.vx, boid.vy);
-                if (speed > speedLimit) {
-                    boid.vx = (boid.vx / speed) * speedLimit;
-                    boid.vy = (boid.vy / speed) * speedLimit;
+                const minSpeed = 1.4;
+                if (speed > currentSpeedLimit) {
+                    boid.vx = (boid.vx / speed) * currentSpeedLimit;
+                    boid.vy = (boid.vy / speed) * currentSpeedLimit;
                 } else if (speed < minSpeed) {
                     boid.vx = (boid.vx / speed) * minSpeed;
                     boid.vy = (boid.vy / speed) * minSpeed;
                 }
 
-                // Update Position
+                // Update Coordinates
                 boid.x += boid.vx;
                 boid.y += boid.vy;
 
-                // Screen Wrap
+                // Screen Boundary Wrap
                 if (boid.x < -10) boid.x = canvas.width + 10;
                 if (boid.x > canvas.width + 10) boid.x = -10;
                 if (boid.y < -10) boid.y = canvas.height + 10;
                 if (boid.y > canvas.height + 10) boid.y = -10;
 
-                // Render Boid
+                // Render Boid Icon
                 const angle = Math.atan2(boid.vy, boid.vx);
                 ctx.translate(boid.x, boid.y);
                 ctx.rotate(angle);
@@ -336,7 +386,7 @@
                 ctx.lineTo(-4, -4); 
                 ctx.closePath();
                 
-                ctx.fillStyle = 'rgba(63, 185, 80, 0.7)'; 
+                ctx.fillStyle = 'rgba(63, 185, 80, 0.75)'; 
                 ctx.fill();
                 
                 ctx.rotate(-angle);
