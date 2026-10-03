@@ -23,7 +23,7 @@
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
         }
         .hud-val { color: #58a6ff; font-weight: bold; }
-        .hud-mode { color: #e3b341; font-weight: bold; }
+        .hud-mode { color: #f85149; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -32,7 +32,7 @@
     <div id="welcome-screen" class="screen active">
         <!-- Live Parameter HUD -->
         <div id="boid-hud">
-            <div>// SWARM_DYNAMICS_ENGINE</div>
+            <div>// STOCHASTIC_SWARM_ENGINE</div>
             <div>PHASE_MODE : <span id="hud-mode" class="hud-mode">INITIALIZING</span></div>
             <div>SEPARATION : <span id="hud-sep" class="hud-val">0.00</span></div>
             <div>COHESION   : <span id="hud-coh" class="hud-val">0.00</span></div>
@@ -214,7 +214,7 @@
             });
         });
 
-        // --- RANDOMIZED MUTATING BOIDS ENGINE ---
+        // --- TOTALLY RANDOM BOIDS ENGINE ---
         const canvas = document.getElementById('boids-bg');
         const ctx = canvas.getContext('2d');
         const hudMode = document.getElementById('hud-mode');
@@ -255,38 +255,24 @@
         let targetSpeedLimit = 4.2;
         let targetVisualRange = 75;
 
-        const phaseModes = [
-            { name: "TIGHT_SWARM", sep: 0.015, coh: 0.007, ali: 0.06, speed: 4.5, range: 90 },
-            { name: "SCATTER_BURST", sep: 0.075, coh: 0.0005, ali: 0.01, speed: 5.5, range: 50 },
-            { name: "SYNCHRONIZED_MIGRATION", sep: 0.02, coh: 0.004, ali: 0.09, speed: 4.0, range: 85 },
-            { name: "BROWNIAN_CHAOS", sep: 0.05, coh: 0.001, ali: 0.005, speed: 3.5, range: 40 },
-            { name: "VORTEX_DRIFT", sep: 0.03, coh: 0.005, ali: 0.045, speed: 4.8, range: 70 }
-        ];
-
+        // Generate completely unconstrained random behaviors
         function pickNewRandomCombination() {
-            // Either select a curated behavior archetype or synthesize entirely random values
-            if (Math.random() > 0.3) {
-                const preset = phaseModes[Math.floor(Math.random() * phaseModes.length)];
-                hudMode.innerText = preset.name;
-                targetSep = preset.sep;
-                targetCoh = preset.coh;
-                targetAli = preset.ali;
-                targetSpeedLimit = preset.speed;
-                targetVisualRange = preset.range;
-            } else {
-                hudMode.innerText = "MUTATING_HYBRID";
-                targetSep = 0.01 + Math.random() * 0.07;
-                targetCoh = 0.0005 + Math.random() * 0.007;
-                targetAli = 0.005 + Math.random() * 0.085;
-                targetSpeedLimit = 3.0 + Math.random() * 3.0;
-                targetVisualRange = 40 + Math.random() * 60;
-            }
+            // Random Hex code for the HUD to look like a chaotic memory address
+            const randomHex = Math.floor(Math.random() * 65535).toString(16).toUpperCase();
+            hudMode.innerText = `STATE_x${randomHex.padStart(4, '0')}`;
+            
+            // Totally pure random math generation
+            targetSep = 0.005 + (Math.random() * 0.1);    // Ranges from clustering to total repulsion
+            targetCoh = 0.0001 + (Math.random() * 0.01);  // Ranges from ignoring others to snapping together
+            targetAli = 0.001 + (Math.random() * 0.1);    // Ranges from independent to rigid synchronized turning
+            targetSpeedLimit = 1.5 + (Math.random() * 5.0); // Ranges from sluggish to hyper-fast
+            targetVisualRange = 20 + (Math.random() * 90);  // Ranges from nearsighted to seeing across the screen
         }
 
-        // Trigger an initial profile, then smoothly swap combinations randomly every 4-7 seconds
+        // Trigger an initial profile, then smoothly swap combinations randomly every 3 to 6 seconds
         pickNewRandomCombination();
         function scheduleNextMutation() {
-            const nextInterval = 4000 + Math.random() * 3000;
+            const nextInterval = 3000 + Math.random() * 3000;
             setTimeout(() => {
                 pickNewRandomCombination();
                 scheduleNextMutation();
@@ -301,12 +287,12 @@
             ctx.fillStyle = 'rgba(5, 5, 5, 0.28)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Smooth linear interpolation (lerp) toward target randomized combinations
-            currentSep += (targetSep - currentSep) * 0.02;
-            currentCoh += (targetCoh - currentCoh) * 0.02;
-            currentAli += (targetAli - currentAli) * 0.02;
-            currentSpeedLimit += (targetSpeedLimit - currentSpeedLimit) * 0.02;
-            currentVisualRange += (targetVisualRange - currentVisualRange) * 0.02;
+            // Smooth linear interpolation (lerp) toward the chaotic random targets
+            currentSep += (targetSep - currentSep) * 0.015;
+            currentCoh += (targetCoh - currentCoh) * 0.015;
+            currentAli += (targetAli - currentAli) * 0.015;
+            currentSpeedLimit += (targetSpeedLimit - currentSpeedLimit) * 0.015;
+            currentVisualRange += (targetVisualRange - currentVisualRange) * 0.015;
 
             // Update Live HUD Readout
             hudSep.innerText = (currentSep * 100).toFixed(2);
@@ -356,7 +342,7 @@
 
                 // Regulate Min and Max Velocities
                 const speed = Math.hypot(boid.vx, boid.vy);
-                const minSpeed = 1.4;
+                const minSpeed = 1.0;
                 if (speed > currentSpeedLimit) {
                     boid.vx = (boid.vx / speed) * currentSpeedLimit;
                     boid.vy = (boid.vy / speed) * currentSpeedLimit;
